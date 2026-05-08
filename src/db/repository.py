@@ -125,3 +125,77 @@ class Repository:
             (limit,),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+    def upsert_resolution(self, record_id: int, reason_code: str,
+                          location: str | None = None,
+                          reason_detail: str | None = None) -> int:
+        existing = self.get_resolution(record_id)
+        now = datetime.now().isoformat()
+        if existing:
+            # Track edits in history
+            for field, old_val, new_val in [
+                ("resolution.reason_code", existing["reason_code"], reason_code),
+                ("resolution.location", existing["location"], location),
+                ("resolution.reason_detail", existing["reason_detail"], reason_detail),
+            ]:
+                if str(old_val) != str(new_val):
+                    self.insert_history(record_id, field, old_val, new_val,
+                                        changed_by="user-edit")
+            self.conn.execute(
+                """UPDATE resolutions SET reason_code=?, location=?, reason_detail=?,
+                   edited_at=?, edit_count=edit_count+1 WHERE record_id=?""",
+                (reason_code, location, reason_detail, now, record_id),
+            )
+            self.conn.commit()
+            return existing["id"]
+        cursor = self.conn.execute(
+            """INSERT INTO resolutions
+               (record_id, reason_code, location, reason_detail, resolved_at)
+               VALUES (?, ?, ?, ?, ?)""",
+            (record_id, reason_code, location, reason_detail, now),
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def get_resolution(self, record_id: int):
+        cursor = self.conn.execute(
+            "SELECT * FROM resolutions WHERE record_id=?", (record_id,)
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def delete_resolution(self, record_id: int):
+        existing = self.get_resolution(record_id)
+        if existing:
+            self.insert_history(record_id, "resolution.deleted",
+                                existing["reason_code"], None, "user-edit")
+            self.conn.execute("DELETE FROM resolutions WHERE record_id=?", (record_id,))
+            self.conn.commit()
+
+    def list_pending_issues(self, start_date: str, end_date: str) -> list[dict]:
+        """Records with issue_case in (A,B,C,F) that lack a resolution."""
+        cursor = self.conn.execute(
+            """SELECT ar.*, e.name AS employee_name, e.staff_no
+               FROM attendance_records ar
+               JOIN employees e ON ar.employee_id = e.id
+               LEFT JOIN resolutions r ON r.record_id = ar.id
+               WHERE ar.date >= ? AND ar.date <= ?
+                 AND ar.issue_case IN ('A','B','C','F')
+                 AND r.id IS NULL
+               ORDER BY ar.date, e.name""",
+            (start_date, end_date),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+    def list_resolved_issues(self, start_date: str, end_date: str) -> list[dict]:
+        cursor = self.conn.execute(
+            """SELECT ar.*, e.name AS employee_name, e.staff_no,
+                      r.reason_code, r.location, r.reason_detail, r.resolved_at
+               FROM attendance_records ar
+               JOIN employees e ON ar.employee_id = e.id
+               JOIN resolutions r ON r.record_id = ar.id
+               WHERE ar.date >= ? AND ar.date <= ?
+               ORDER BY ar.date, e.name""",
+            (start_date, end_date),
+        )
+        return [dict(row) for row in cursor.fetchall()]
