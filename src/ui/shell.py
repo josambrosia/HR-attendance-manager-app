@@ -1,6 +1,7 @@
 import flet as ft
 from src.core.constants import COLORS
 from src.core.settings_store import SettingsStore
+from src.db.repository import Repository
 from src.ui.components.logo import hexagon_j
 from src.ui.pages import _placeholder
 
@@ -23,9 +24,11 @@ NAV_GROUPS = [
 
 
 class Shell:
-    def __init__(self, page: ft.Page, settings: SettingsStore):
+    def __init__(self, page: ft.Page, settings: SettingsStore, repo: Repository, snapshot_dir: str):
         self.page = page
         self.settings = settings
+        self.repo = repo
+        self.snapshot_dir = snapshot_dir
         self.mode = settings.get("theme", "dark")
         self.current_route = "dashboard"
         self.content_area = ft.Container(expand=True)
@@ -37,11 +40,20 @@ class Shell:
         Future tasks will replace placeholder entries with real page builders.
         Each builder returns the ft.Control to mount in content_area.
         """
-        return {
-            route: (lambda r=route, t=label: _placeholder.build(t, self.mode))
-            for _, items in NAV_GROUPS
-            for route, label, _ in items
-        }
+        builders = {}
+        for _, items in NAV_GROUPS:
+            for route, label, _ in items:
+                if route == "import_data":
+                    builders[route] = self._build_import_data_page
+                else:
+                    # Capture per-iteration via default args
+                    builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
+        return builders
+
+    def _build_import_data_page(self) -> ft.Control:
+        from src.ui.pages.import_data import ImportDataPage
+        page_obj = ImportDataPage(self.repo, self.settings, self.snapshot_dir, self.mode)
+        return page_obj.build()
 
     def build(self) -> ft.Control:
         self._apply_theme()
