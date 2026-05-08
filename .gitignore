@@ -64,3 +64,7 @@ Thumbs.db
 *.tmp
 *.bak
 *.log
+
+# ============ Test fixtures (PII — kept local) ============
+tests/fixtures/*.xls
+tests/fixtures/*.xlsx
