@@ -77,3 +77,51 @@ class Repository:
             (start_date, end_date),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+    def create_import_batch(self, filename: str, date_start: str, date_end: str) -> int:
+        cursor = self.conn.execute(
+            """INSERT INTO import_batches
+               (filename, imported_at, date_range_start, date_range_end)
+               VALUES (?, ?, ?, ?)""",
+            (filename, datetime.now().isoformat(), date_start, date_end),
+        )
+        self.conn.commit()
+        return cursor.lastrowid
+
+    def update_batch_counts(self, batch_id: int, inserted: int, kept: int,
+                            overwritten: int, snapshot_path: str | None = None):
+        self.conn.execute(
+            """UPDATE import_batches
+               SET rows_inserted=?, rows_kept=?, rows_overwritten=?, snapshot_path=?
+               WHERE id=?""",
+            (inserted, kept, overwritten, snapshot_path, batch_id),
+        )
+        self.conn.commit()
+
+    def update_attendance(self, record_id: int, fields: dict):
+        set_clause = ", ".join(f"{k}=?" for k in fields.keys())
+        values = list(fields.values()) + [record_id]
+        self.conn.execute(
+            f"UPDATE attendance_records SET {set_clause} WHERE id=?", values
+        )
+        self.conn.commit()
+
+    def insert_history(self, record_id: int, field: str, old_val, new_val,
+                       changed_by: str, batch_id: int | None = None):
+        self.conn.execute(
+            """INSERT INTO record_history
+               (record_id, changed_field, old_value, new_value, changed_at, changed_by, batch_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (record_id, field,
+             str(old_val) if old_val is not None else None,
+             str(new_val) if new_val is not None else None,
+             datetime.now().isoformat(), changed_by, batch_id),
+        )
+        self.conn.commit()
+
+    def list_batches(self, limit: int = 50) -> list[dict]:
+        cursor = self.conn.execute(
+            "SELECT * FROM import_batches ORDER BY imported_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
