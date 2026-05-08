@@ -45,6 +45,8 @@ class Shell:
             for route, label, _ in items:
                 if route == "import_data":
                     builders[route] = self._build_import_data_page
+                elif route == "issues":
+                    builders[route] = self._build_issues_page
                 else:
                     # Capture per-iteration via default args
                     builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
@@ -53,6 +55,11 @@ class Shell:
     def _build_import_data_page(self) -> ft.Control:
         from src.ui.pages.import_data import ImportDataPage
         page_obj = ImportDataPage(self.repo, self.settings, self.snapshot_dir, self.mode)
+        return page_obj.build()
+
+    def _build_issues_page(self) -> ft.Control:
+        from src.ui.pages.issues import IssuesPage
+        page_obj = IssuesPage(self.repo, self.settings, self.mode)
         return page_obj.build()
 
     def build(self) -> ft.Control:
