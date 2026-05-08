@@ -1,5 +1,3 @@
-import os
-import tempfile
 from src.db.repository import Repository
 
 
@@ -33,6 +31,18 @@ def test_upsert_and_fetch_employee(tmp_path):
         staff_no="1002", name="ANDIKA", department="ARGA DIRGA"
     )
     assert emp_id2 == emp_id
+
+
+def test_upsert_employee_preserves_department_when_omitted(tmp_path):
+    repo = Repository(str(tmp_path / "test.db"))
+    repo.init_schema()
+    # First insert with department
+    repo.upsert_employee("1002", "ANDIKA", department="ARGA DIRGA")
+    # Re-upsert without department (e.g., parser doesn't have dept info this time)
+    repo.upsert_employee("1002", "ANDIKA")
+    # Department should be preserved, not nulled
+    fetched = repo.get_employee_by_staff_no("1002")
+    assert fetched["department"] == "ARGA DIRGA"
 
 
 def test_insert_and_fetch_attendance(tmp_path):

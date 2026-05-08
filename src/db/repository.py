@@ -26,11 +26,11 @@ class Repository:
     def close(self):
         self.conn.close()
 
-    def upsert_employee(self, staff_no: str, name: str, department: str = None) -> int:
+    def upsert_employee(self, staff_no: str, name: str, department: str | None = None) -> int:
         existing = self.get_employee_by_staff_no(staff_no)
         if existing:
             self.conn.execute(
-                "UPDATE employees SET name=?, department=? WHERE id=?",
+                "UPDATE employees SET name=?, department=COALESCE(?, department) WHERE id=?",
                 (name, department, existing["id"]),
             )
             self.conn.commit()
