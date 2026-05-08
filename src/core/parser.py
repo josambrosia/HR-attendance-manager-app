@@ -13,12 +13,10 @@ COL_MASUK = 8
 COL_KELUAR = 10
 COL_KERJA = 13
 COL_LEMBUR = 14
-COL_KURANG = 15
 COL_TERLAMBAT = 16
 COL_PULANG_CEPAT = 17
 COL_ABSEN = 18
 COL_LUPA = 19
-COL_IJIN = 20
 
 
 def _to_int(value) -> int:
@@ -58,10 +56,25 @@ def _to_staff_no(value) -> str:
     return str(value).strip()
 
 
-def _normalize_time(value) -> str | None:
-    """Convert '08.06' -> '08:06'. Empty -> None."""
+def _normalize_time(value, datemode: int = 0) -> str | None:
+    """Convert '08.06' or 0.3375 -> '08:06'. Empty -> None.
+
+    xlrd may return time-formatted Excel cells as either a string ('08.06')
+    or a float representing day fraction (0.3375 ~= 08:06). The current
+    fingerprint export emits strings, but other versions could emit floats,
+    so handle both. ``datemode`` defaults to 0 (1900 epoch) which is the
+    standard for Windows .xls files.
+    """
     if value == "" or value is None:
         return None
+    if isinstance(value, float):
+        # xlrd returns time as a fraction of a day; convert via xldate.
+        try:
+            tup = xlrd.xldate.xldate_as_tuple(value, datemode)
+            # tup = (year, month, day, hour, minute, second)
+            return f"{tup[3]:02d}:{tup[4]:02d}"
+        except Exception:
+            return None
     s = str(value).strip()
     if not s:
         return None
@@ -92,6 +105,9 @@ def _parse_schedule(schedule_str) -> tuple[str | None, str | None]:
 
 def parse_xls(path: str) -> list[dict]:
     """Parse fingerprint export .xls into list of normalized record dicts."""
+    # ignore_workbook_corruption: fingerprint .xls exports often have a benign
+    # OLE2 inconsistency warning (SSCS/SSAT size mismatch) that doesn't affect
+    # data integrity. Without this flag, xlrd raises on open.
     book = xlrd.open_workbook(path, ignore_workbook_corruption=True)
     sheet = book.sheet_by_index(0)
     records = []
@@ -120,8 +136,8 @@ def parse_xls(path: str) -> list[dict]:
             "day_type": str(row[COL_TYPE]).strip(),
             "schedule_in": sched_in,
             "schedule_out": sched_out,
-            "actual_in": _normalize_time(row[COL_MASUK]),
-            "actual_out": _normalize_time(row[COL_KELUAR]),
+            "actual_in": _normalize_time(row[COL_MASUK], book.datemode),
+            "actual_out": _normalize_time(row[COL_KELUAR], book.datemode),
             "late_minutes": _to_int(row[COL_TERLAMBAT]),
             "early_leave_minutes": _to_int(row[COL_PULANG_CEPAT]),
             "work_hours": _to_float(row[COL_KERJA]),
