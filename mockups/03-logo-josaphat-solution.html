@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>HR App — Josaphat Solution Logo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #faf5ff;
+    color: #1e1b4b;
+    padding: 32px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 40px; }
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: #6b7280; font-size: 1rem; }
+  .palette-pill {
+    display: inline-block; padding: 4px 12px; background: linear-gradient(135deg, #7C3AED, #F472B6);
+    color: white; border-radius: 999px; font-size: 0.75rem; font-weight: 600;
+    margin-top: 8px;
+  }
+
+  .logo-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+  }
+  .logo-card {
+    background: #ffffff;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .logo-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .logo-name { font-size: 1.125rem; font-weight: 700; }
+  .logo-letter {
+    display: inline-block; background: linear-gradient(135deg, #7C3AED, #F472B6);
+    color: white; padding: 2px 10px; border-radius: 6px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
+  }
+  .logo-desc { color: #6b7280; font-size: 0.875rem; margin-bottom: 16px; min-height: 2.5em; }
+
+  .preview-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .preview-box {
+    aspect-ratio: 1.5;
+    border-radius: 12px;
+    display: flex; flex-direction: column;
+    justify-content: space-between;
+    padding: 14px 16px;
+  }
+  .preview-light { background: #ffffff; border: 1px solid #e9d5ff; }
+  .preview-dark { background: #1a0b2e; }
+
+  .mode-tag {
+    font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; opacity: 0.6;
+  }
+  .preview-light .mode-tag { color: #4c1d95; }
+  .preview-dark .mode-tag { color: #DDD6FE; }
+
+  /* Full logo: icon + wordmark side by side */
+  .logo-full {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .wordmark {
+    display: flex; flex-direction: column; line-height: 1;
+  }
+  .wordmark-brand {
+    font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em;
+  }
+  .wordmark-tagline {
+    font-weight: 500; font-size: 0.7rem; letter-spacing: 0.02em;
+    margin-top: 2px; opacity: 0.7;
+  }
+  .preview-light .wordmark-brand { color: #1e1b4b; }
+  .preview-light .wordmark-tagline { color: #6b46c1; }
+  .preview-dark .wordmark-brand { color: #f5f3ff; }
+  .preview-dark .wordmark-tagline { color: #C084FC; }
+
+  /* Compact logo: icon only */
+  .logo-compact {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.7rem; opacity: 0.7;
+  }
+  .preview-light .logo-compact { color: #6b7280; }
+  .preview-dark .logo-compact { color: #C084FC; }
+
+  /* ============ ICON STYLES ============ */
+
+  /* 1. Sharp Geometric */
+  .icon-1-large {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #7C3AED 0%, #F472B6 100%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 22px;
+    letter-spacing: -0.05em;
+    box-shadow: 0 3px 8px rgba(124,58,237,0.3);
+    flex-shrink: 0;
+  }
+  .icon-1-small {
+    width: 18px; height: 18px;
+    background: linear-gradient(135deg, #7C3AED, #F472B6);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 11px;
+  }
+
+  /* 2. Rounded Friendly */
+  .icon-2-large {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(135deg, #7C3AED 0%, #F472B6 100%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 21px;
+    box-shadow: 0 4px 10px rgba(244,114,182,0.3);
+    flex-shrink: 0;
+  }
+  .icon-2-small {
+    width: 18px; height: 18px; border-radius: 5px;
+    background: linear-gradient(135deg, #7C3AED, #F472B6);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 11px;
+  }
+
+  /* 3. Circular Badge */
+  .icon-3-large {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #7C3AED 0%, #F472B6 100%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 19px;
+    box-shadow: 0 4px 10px rgba(244,114,182,0.3);
+    flex-shrink: 0;
+  }
+  .icon-3-small {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: linear-gradient(135deg, #7C3AED, #F472B6);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 10px;
+  }
+
+  /* 4. Hexagon Tech */
+  .icon-4-large {
+    width: 38px; height: 42px;
+    background: linear-gradient(135deg, #7C3AED 0%, #F472B6 100%);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px;
+    filter: drop-shadow(0 3px 6px rgba(124,58,237,0.3));
+    flex-shrink: 0;
+  }
+  .icon-4-small {
+    width: 18px; height: 20px;
+    background: linear-gradient(135deg, #7C3AED, #F472B6);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 10px;
+  }
+
+  /* 5. Glassmorphism with Glow */
+  .icon-5-large {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.85), rgba(244,114,182,0.85));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 19px;
+    box-shadow:
+      0 0 16px rgba(244,114,182,0.5),
+      0 3px 12px rgba(124,58,237,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+  .preview-dark .icon-5-large {
+    box-shadow:
+      0 0 24px rgba(244,114,182,0.6),
+      0 0 48px rgba(124,58,237,0.3),
+      inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+  .icon-5-small {
+    width: 18px; height: 18px; border-radius: 5px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.9), rgba(244,114,182,0.9));
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 10px;
+    box-shadow: 0 0 8px rgba(244,114,182,0.4);
+  }
+
+  /* 6. Outline Minimalist */
+  .icon-6-large {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: transparent;
+    border: 2px solid #7C3AED;
+    color: #7C3AED;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 19px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .icon-6-large::after {
+    content: ''; position: absolute; top: -2px; right: -2px; width: 9px; height: 9px;
+    border-radius: 50%; background: #F472B6;
+    box-shadow: 0 0 6px rgba(244,114,182,0.6);
+  }
+  .preview-dark .icon-6-large { border-color: #C084FC; color: #C084FC; }
+  .icon-6-small {
+    width: 18px; height: 18px; border-radius: 5px;
+    background: transparent;
+    border: 1.5px solid #7C3AED;
+    color: #7C3AED;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 10px;
+    position: relative;
+  }
+  .icon-6-small::after {
+    content: ''; position: absolute; top: -1.5px; right: -1.5px; width: 5px; height: 5px;
+    border-radius: 50%; background: #F472B6;
+  }
+  .preview-dark .icon-6-small { border-color: #C084FC; color: #C084FC; }
+
+  .pick-instruction {
+    background: linear-gradient(135deg, #7C3AED, #F472B6); color: white;
+    padding: 16px 24px; border-radius: 12px; text-align: center;
+    margin-top: 32px; font-weight: 600;
+  }
+
+  .context-note {
+    background: #f3e8ff; border-left: 4px solid #7C3AED;
+    padding: 12px 16px; border-radius: 8px;
+    margin-bottom: 24px; font-size: 0.875rem; color: #581c87;
+  }
+
+  .typography-toggle {
+    text-align: center; margin: 16px 0 24px; font-size: 0.875rem; color: #6b46c1;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎨 Josaphat Solution — Logo Direction</h1>
+    <p class="subtitle">Wordmark + Icon. Versi compact (icon only) untuk taskbar / window title.</p>
+    <div class="palette-pill">Sunset Coral palette</div>
+  </header>
+
+  <div class="context-note">
+    <strong>Layout strategy:</strong>
+    <strong style="color:#1e1b4b">Full logo</strong> dipakai di sidebar kiri & splash screen (icon + "Josaphat Solution" + tagline "HR Attendance Manager").
+    <strong style="color:#1e1b4b">Compact logo</strong> dipakai di tempat sempit seperti window title bar (icon "J" only).
+    Brand "Josaphat" + tagline "HR Attendance Manager" — bisa di-edit nanti.
+  </div>
+
+  <div class="logo-grid">
+
+    <!-- Variant 1 -->
+    <div class="logo-card">
+      <div class="logo-card-header">
+        <div class="logo-name">1. Sharp Geometric</div>
+        <span class="logo-letter">SHARP</span>
+      </div>
+      <p class="logo-desc">Square sharp corners, bold gradient. Vibe edgy & profesional — paling "serius".</p>
+      <div class="preview-row">
+        <div class="preview-box preview-light">
+          <span class="mode-tag">Light · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-1-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-1-small">J</div>Window title</div>
+        </div>
+        <div class="preview-box preview-dark">
+          <span class="mode-tag">Dark · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-1-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-1-small">J</div>Window title</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant 2 -->
+    <div class="logo-card">
+      <div class="logo-card-header">
+        <div class="logo-name">2. Rounded Friendly</div>
+        <span class="logo-letter">FRIENDLY</span>
+      </div>
+      <p class="logo-desc">Rounded corners 11px. Modern & approachable — gaya Notion/Slack/Discord. Pilihan paling balanced.</p>
+      <div class="preview-row">
+        <div class="preview-box preview-light">
+          <span class="mode-tag">Light · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-2-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-2-small">J</div>Window title</div>
+        </div>
+        <div class="preview-box preview-dark">
+          <span class="mode-tag">Dark · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-2-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-2-small">J</div>Window title</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant 3 -->
+    <div class="logo-card">
+      <div class="logo-card-header">
+        <div class="logo-name">3. Circular Badge</div>
+        <span class="logo-letter">SOFT</span>
+      </div>
+      <p class="logo-desc">Bulat sempurna. Paling soft & human-centered — vibe avatar/profile.</p>
+      <div class="preview-row">
+        <div class="preview-box preview-light">
+          <span class="mode-tag">Light · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-3-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-3-small">J</div>Window title</div>
+        </div>
+        <div class="preview-box preview-dark">
+          <span class="mode-tag">Dark · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-3-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-3-small">J</div>Window title</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant 4 -->
+    <div class="logo-card">
+      <div class="logo-card-header">
+        <div class="logo-name">4. Hexagon Tech</div>
+        <span class="logo-letter">TECH SAVVY</span>
+      </div>
+      <p class="logo-desc">Heksagonal. Distinctive & vibe tech-savvy. Paling unik.</p>
+      <div class="preview-row">
+        <div class="preview-box preview-light">
+          <span class="mode-tag">Light · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-4-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-4-small">J</div>Window title</div>
+        </div>
+        <div class="preview-box preview-dark">
+          <span class="mode-tag">Dark · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-4-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-4-small">J</div>Window title</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant 5 -->
+    <div class="logo-card">
+      <div class="logo-card-header">
+        <div class="logo-name">5. Glassmorphism + Glow</div>
+        <span class="logo-letter">PREMIUM</span>
+      </div>
+      <p class="logo-desc">Kaca semi-transparan + glow. Premium/futuristic — paling kelihatan oke di dark mode.</p>
+      <div class="preview-row">
+        <div class="preview-box preview-light">
+          <span class="mode-tag">Light · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-5-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-5-small">J</div>Window title</div>
+        </div>
+        <div class="preview-box preview-dark">
+          <span class="mode-tag">Dark · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-5-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-5-small">J</div>Window title</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant 6 -->
+    <div class="logo-card">
+      <div class="logo-card-header">
+        <div class="logo-name">6. Outline + Notification Dot</div>
+        <span class="logo-letter">MINIMAL</span>
+      </div>
+      <p class="logo-desc">Outline minimalis dengan dot pink. Sophisticated & ringan — distinctive berkat dot accent.</p>
+      <div class="preview-row">
+        <div class="preview-box preview-light">
+          <span class="mode-tag">Light · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-6-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-6-small">J</div>Window title</div>
+        </div>
+        <div class="preview-box preview-dark">
+          <span class="mode-tag">Dark · Sidebar</span>
+          <div class="logo-full">
+            <div class="icon-6-large">J</div>
+            <div class="wordmark">
+              <div class="wordmark-brand">Josaphat Solution</div>
+              <div class="wordmark-tagline">HR Attendance Manager</div>
+            </div>
+          </div>
+          <div class="logo-compact"><div class="icon-6-small">J</div>Window title</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pick-instruction">
+    Pilih nomor: <strong>1</strong> · <strong>2</strong> · <strong>3</strong> · <strong>4</strong> · <strong>5</strong> · <strong>6</strong><br>
+    <span style="font-size:0.875rem; opacity:0.9;">Atau bilang "tagline-nya ganti jadi X" / "tanpa tagline" / "wordmark-nya warna pink saja"</span>
+  </div>
+</div>
+</body>
+</html>

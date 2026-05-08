@@ -1,0 +1,66 @@
+# ============ IMPORTANT: Employee Data (PII) — NEVER COMMIT ============
+data/
+backups/
+*.db
+*.sqlite
+*.sqlite3
+*.xls
+*.xlsx
+*.xlsm
+exports/
+
+# ============ Python ============
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# ============ Flet build artifacts ============
+storage/
+
+# ============ IDE / Editor ============
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============ Brainstorming session files ============
+.superpowers/
+
+# ============ Claude Code local settings ============
+.claude/
+
+# ============ Temporary / OS ============
+*.tmp
+*.bak
+*.log

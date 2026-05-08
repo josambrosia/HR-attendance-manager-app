@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Josaphat Tech Solution — Dashboard (Maximum Bold)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+    background: #1a0b2e;
+    color: #e9d5ff;
+    padding: 0;
+    min-height: 100vh;
+  }
+  .app-shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ============ SIDEBAR ============ */
+  .sidebar {
+    background: #2d1b4e;
+    border-right: 1px solid #4c1d95;
+    padding: 20px 16px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .logo-block { display: flex; align-items: center; gap: 10px; padding: 8px; }
+  .icon-hex {
+    width: 38px; height: 42px;
+    background: linear-gradient(135deg, #7C3AED 0%, #F472B6 100%);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 18px;
+    filter: drop-shadow(0 3px 6px rgba(124,58,237,0.4));
+    flex-shrink: 0;
+  }
+  .wordmark { line-height: 1.1; }
+  .wordmark-brand { font-weight: 800; font-size: 0.95rem; color: #f5f3ff; }
+  .wordmark-tagline { font-weight: 500; font-size: 0.65rem; color: #C084FC; margin-top: 2px; }
+
+  .nav-list { display: flex; flex-direction: column; gap: 2px; }
+  .nav-section { font-size: 0.625rem; text-transform: uppercase; letter-spacing: 0.1em; color: #A78BFA; padding: 12px 12px 6px; font-weight: 700; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 8px; font-size: 0.875rem; color: #DDD6FE; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-item:hover { background: rgba(167,139,250,0.1); }
+  .nav-item.active {
+    background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(244,114,182,0.2));
+    color: #f5f3ff; font-weight: 600;
+  }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.8; }
+  .badge {
+    margin-left: auto; background: #F472B6; color: white;
+    font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+  }
+  .badge-red { background: #EF4444; animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+    50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+  }
+
+  .sidebar-footer { margin-top: auto; padding: 12px; font-size: 0.7rem; color: #A78BFA; opacity: 0.7; }
+  .theme-toggle {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: rgba(167,139,250,0.1); border-radius: 8px;
+    cursor: pointer;
+  }
+
+  /* ============ MAIN CONTENT ============ */
+  .main { padding: 28px 36px; overflow-y: auto; }
+  .page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid #4c1d95; }
+  .page-title { font-size: 1.75rem; font-weight: 800; color: #f5f3ff; }
+  .page-subtitle { font-size: 0.875rem; color: #C084FC; margin-top: 4px; }
+  .header-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 0.875rem; font-weight: 600;
+    border: none; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #7C3AED, #F472B6); color: white;
+    box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+  }
+  .btn-secondary {
+    background: rgba(167,139,250,0.1); color: #DDD6FE;
+    border: 1px solid #4c1d95;
+  }
+
+  /* ============ VITAL METRICS (top, prominent) ============ */
+  .tier-label {
+    font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.1em; color: #A78BFA; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tier-label::after {
+    content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, #4c1d95, transparent);
+  }
+
+  .vital-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .vital-card {
+    background: #2d1b4e; border: 1px solid #4c1d95; border-radius: 12px;
+    padding: 18px;
+    position: relative;
+  }
+  .vital-card.urgent {
+    background: linear-gradient(135deg, #2d1b4e, rgba(239,68,68,0.18));
+    border-color: rgba(239,68,68,0.5);
+  }
+  .vital-card.coaching {
+    background: linear-gradient(135deg, #2d1b4e, rgba(244,114,182,0.18));
+    border-color: rgba(244,114,182,0.5);
+  }
+  .vital-card.warning {
+    background: linear-gradient(135deg, #2d1b4e, rgba(251,146,60,0.15));
+    border-color: rgba(251,146,60,0.5);
+  }
+  .vital-card.positive {
+    background: linear-gradient(135deg, #2d1b4e, rgba(52,211,153,0.15));
+    border-color: rgba(52,211,153,0.4);
+  }
+  .vital-icon { font-size: 1.4rem; margin-bottom: 8px; }
+  .vital-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #A78BFA; margin-bottom: 4px; font-weight: 700; }
+  .vital-value { font-size: 2rem; font-weight: 900; color: #f5f3ff; line-height: 1; }
+  .vital-value.red { color: #FCA5A5; }
+  .vital-value.coaching { color: #F9A8D4; }
+  .vital-value.warning { color: #FDBA74; }
+  .vital-value.positive { color: #6EE7B7; }
+  .vital-meta { font-size: 0.7rem; margin-top: 8px; color: #C084FC; }
+
+  /* ============ TRIVIA METRICS (below, smaller) ============ */
+  .trivia-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+  .trivia-card {
+    background: rgba(45,27,78,0.5); border: 1px solid rgba(76,29,149,0.5); border-radius: 8px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .trivia-icon { font-size: 0.95rem; opacity: 0.8; }
+  .trivia-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #A78BFA; font-weight: 600; }
+  .trivia-value { font-size: 0.95rem; font-weight: 700; color: #DDD6FE; }
+  .trivia-meta { font-size: 0.65rem; color: #C084FC; }
+
+  /* ============ COACHING REQUIRED — MAXIMUM BOLD ============ */
+  .coaching-section {
+    background: linear-gradient(135deg, rgba(244,114,182,0.12), rgba(239,68,68,0.08));
+    border: 2px solid #F472B6;
+    border-radius: 16px; padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 0 32px rgba(244,114,182,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+    position: relative; overflow: hidden;
+  }
+  .coaching-section::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #F472B6, #EF4444, #F472B6);
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .coaching-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; padding-bottom: 14px;
+    border-bottom: 1px dashed rgba(244,114,182,0.4);
+  }
+  .coaching-title-bold {
+    font-size: 1.5rem; font-weight: 900; color: #F472B6;
+    display: flex; align-items: center; gap: 12px;
+    text-shadow: 0 0 20px rgba(244,114,182,0.4);
+  }
+  .coaching-title-icon { font-size: 2rem; animation: rotate-warn 4s ease-in-out infinite; }
+  @keyframes rotate-warn {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+  .coaching-required-badge {
+    background: #EF4444; color: white;
+    padding: 6px 14px; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 800;
+    letter-spacing: 0.1em;
+    box-shadow: 0 0 16px rgba(239,68,68,0.6);
+    animation: pulse-red 2s ease-in-out infinite;
+  }
+  @keyframes pulse-red {
+    0%, 100% { box-shadow: 0 0 16px rgba(239,68,68,0.6); transform: scale(1); }
+    50% { box-shadow: 0 0 28px rgba(239,68,68,0.9); transform: scale(1.04); }
+  }
+  .coaching-subtitle { font-size: 0.85rem; color: #DDD6FE; margin-top: 6px; }
+
+  .coaching-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .coaching-card-bold {
+    background: linear-gradient(135deg, rgba(45,27,78,0.7), rgba(239,68,68,0.15));
+    border: 1.5px solid rgba(239,68,68,0.5);
+    border-radius: 12px; padding: 18px;
+    position: relative;
+  }
+  .coaching-name-bold {
+    font-size: 1.5rem; font-weight: 900; color: #f5f3ff;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .coaching-rank { font-size: 1.2rem; }
+  .coaching-stat-bold {
+    font-size: 1rem; margin-top: 8px;
+    color: #FCA5A5; font-weight: 600;
+  }
+  .coaching-big-num {
+    font-size: 1.6rem; font-weight: 900; color: #EF4444;
+    text-shadow: 0 0 12px rgba(239,68,68,0.4);
+  }
+  .coaching-meta-bold {
+    display: flex; gap: 20px; margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid rgba(244,114,182,0.2);
+  }
+  .coaching-detail-bold { font-size: 0.75rem; }
+  .coaching-detail-label-bold { color: #A78BFA; display: block; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.65rem; }
+  .coaching-detail-value-bold { font-weight: 800; font-size: 1rem; color: #f5f3ff; margin-top: 2px; }
+
+  /* ============ HALL OF LATE — BOLD ============ */
+  .hall-section {
+    background: #2d1b4e; border: 1px solid #4c1d95; border-radius: 16px;
+    padding: 22px; margin-bottom: 20px;
+  }
+  .hall-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .hall-title {
+    font-size: 1.35rem; font-weight: 900; color: #f5f3ff;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hall-icon-bold { font-size: 1.6rem; }
+  .hall-subtitle { font-size: 0.78rem; color: #A78BFA; margin-top: 4px; }
+
+  .ranking-bold { display: flex; flex-direction: column; gap: 8px; }
+  .rank-row-bold {
+    display: grid; grid-template-columns: 60px 1fr 130px 120px; gap: 14px;
+    align-items: center; padding: 14px 16px; border-radius: 10px;
+    background: rgba(167,139,250,0.04);
+    border-left: 4px solid transparent;
+    transition: all 0.15s;
+  }
+  .rank-row-bold:hover { background: rgba(167,139,250,0.1); transform: translateX(4px); }
+  .rank-row-bold.top1 { border-left-color: #EF4444; background: linear-gradient(90deg, rgba(239,68,68,0.15), transparent); }
+  .rank-row-bold.top2 { border-left-color: #F87171; background: linear-gradient(90deg, rgba(248,113,113,0.1), transparent); }
+  .rank-row-bold.top3 { border-left-color: #FBBF24; background: linear-gradient(90deg, rgba(251,191,36,0.08), transparent); }
+
+  .rank-medal {
+    font-size: 2rem; text-align: center;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  .rank-position {
+    font-size: 1.2rem; font-weight: 900;
+    text-align: center; color: #C084FC;
+  }
+  .rank-name-bold { font-weight: 900; font-size: 1.1rem; color: #f5f3ff; }
+  .rank-name-bold .repeat-icon { display: inline-block; margin-left: 6px; font-size: 0.95rem; }
+  .rank-meta-bold { font-size: 0.75rem; color: #A78BFA; margin-top: 3px; }
+
+  .rank-bar-container-bold {
+    height: 10px; background: rgba(167,139,250,0.1); border-radius: 6px; overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .rank-bar-bold {
+    height: 100%; border-radius: 6px;
+    background: linear-gradient(90deg, #EF4444, #F472B6);
+    box-shadow: 0 0 8px rgba(239,68,68,0.4);
+  }
+  .rank-bar-bold.below { background: linear-gradient(90deg, #C084FC, #A78BFA); box-shadow: none; opacity: 0.6; }
+
+  .rank-value-bold {
+    font-family: 'Inter', system-ui, monospace;
+    font-size: 1.3rem; font-weight: 900; color: #FCA5A5;
+    text-align: right;
+  }
+  .rank-value-bold.below { color: #DDD6FE; font-weight: 700; }
+
+  /* Charts */
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-section {
+    background: #2d1b4e; border: 1px solid #4c1d95;
+    border-radius: 12px; padding: 18px;
+  }
+  .chart-title { font-size: 1rem; font-weight: 700; color: #f5f3ff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .chart-mock {
+    height: 160px; background: rgba(167,139,250,0.05); border-radius: 8px;
+    display: flex; align-items: flex-end; justify-content: space-around;
+    padding: 14px; gap: 6px;
+  }
+  .chart-bar { flex: 1; background: linear-gradient(180deg, #F472B6, #7C3AED); border-radius: 4px 4px 0 0; opacity: 0.85; }
+
+  .reason-list { padding: 8px 0; }
+  .reason-row { display: flex; align-items: center; padding: 6px 0; gap: 10px; font-size: 0.875rem; }
+  .reason-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .reason-name { flex: 1; color: #DDD6FE; }
+  .reason-count { color: #A78BFA; font-weight: 700; }
+
+  .footer-note {
+    background: rgba(244,114,182,0.05); border-left: 3px solid #C084FC;
+    padding: 12px 16px; border-radius: 6px; font-size: 0.8rem; color: #DDD6FE;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="logo-block">
+      <div class="icon-hex">J</div>
+      <div class="wordmark">
+        <div class="wordmark-brand">Josaphat Tech Solution</div>
+        <div class="wordmark-tagline">HR Attendance Manager</div>
+      </div>
+    </div>
+
+    <nav class="nav-list">
+      <div class="nav-section">Workflow</div>
+      <div class="nav-item">
+        <span class="nav-icon">📥</span> Import Data
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">⚠️</span> Issues
+        <span class="badge badge-red">12</span>
+      </div>
+      <div class="nav-item active">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+
+      <div class="nav-section">Reports</div>
+      <div class="nav-item"><span class="nav-icon">📅</span> Weekly Report</div>
+      <div class="nav-item"><span class="nav-icon">📆</span> Monthly Report</div>
+
+      <div class="nav-section">Tools</div>
+      <div class="nav-item"><span class="nav-icon">✏️</span> Edit Records</div>
+      <div class="nav-item"><span class="nav-icon">🗂️</span> Backup / Restore</div>
+      <div class="nav-item"><span class="nav-icon">⚙️</span> Settings</div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="theme-toggle">
+        <span>🌙</span><span>Dark Mode</span>
+      </div>
+      <div style="margin-top: 12px; text-align: center;">v1.0 · Local Build</div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="main">
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">Weekly Dashboard</div>
+        <div class="page-subtitle">Periode: 1 Apr – 7 Apr 2026 · 30 karyawan tracked</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary">📤 Export Excel</button>
+        <button class="btn btn-primary">📅 Pilih Minggu</button>
+      </div>
+    </div>
+
+    <!-- ============ VITAL METRICS (TOP, BOLD) ============ -->
+    <div class="tier-label">⭐ Vital Metrics</div>
+    <div class="vital-grid">
+      <div class="vital-card urgent">
+        <div class="vital-icon">⚠️</div>
+        <div class="vital-label">Pending Issues</div>
+        <div class="vital-value red">4</div>
+        <div class="vital-meta">8 of 12 resolved</div>
+      </div>
+
+      <div class="vital-card coaching">
+        <div class="vital-icon">🚨</div>
+        <div class="vital-label">Need Coaching</div>
+        <div class="vital-value coaching">2</div>
+        <div class="vital-meta">Threshold &gt;75 mnt/minggu</div>
+      </div>
+
+      <div class="vital-card warning">
+        <div class="vital-icon">🔥</div>
+        <div class="vital-label">Repeat Offenders</div>
+        <div class="vital-value warning">3</div>
+        <div class="vital-meta">Telat 3+ minggu berturut</div>
+      </div>
+
+      <div class="vital-card positive">
+        <div class="vital-icon">✅</div>
+        <div class="vital-label">Attendance Rate</div>
+        <div class="vital-value positive">94%</div>
+        <div class="vital-meta">↑ 2% vs minggu lalu</div>
+      </div>
+    </div>
+
+    <!-- ============ TRIVIA METRICS (BELOW, SMALLER) ============ -->
+    <div class="tier-label">📌 Trivia & Insights</div>
+    <div class="trivia-grid">
+      <div class="trivia-card">
+        <div class="trivia-icon">🏷️</div>
+        <div class="trivia-label">Most Common Reason</div>
+        <div class="trivia-value">Tugas Lapangan</div>
+        <div class="trivia-meta">4 dari 12 issue (33%)</div>
+      </div>
+
+      <div class="trivia-card">
+        <div class="trivia-icon">📅</div>
+        <div class="trivia-label">Hari Paling Telat</div>
+        <div class="trivia-value">Senin</div>
+        <div class="trivia-meta">5 telat · total 287 mnt</div>
+      </div>
+
+      <div class="trivia-card">
+        <div class="trivia-icon">📈</div>
+        <div class="trivia-label">Late Trend</div>
+        <div class="trivia-value">↓ 12%</div>
+        <div class="trivia-meta">vs minggu lalu (membaik)</div>
+      </div>
+
+      <div class="trivia-card">
+        <div class="trivia-icon">🌟</div>
+        <div class="trivia-label">Best Performer</div>
+        <div class="trivia-value">ANDIKA</div>
+        <div class="trivia-meta">0 telat · 5 hari penuh</div>
+      </div>
+    </div>
+
+    <!-- ============ COACHING REQUIRED (MAXIMUM BOLD) ============ -->
+    <section class="coaching-section">
+      <div class="coaching-header">
+        <div>
+          <div class="coaching-title-bold">
+            <span class="coaching-title-icon">🚨</span>
+            <span>COACHING REQUIRED</span>
+          </div>
+          <div class="coaching-subtitle">Karyawan dengan akumulasi keterlambatan &gt; threshold minggu ini · jadwalkan coaching session minggu depan</div>
+        </div>
+        <div class="coaching-required-badge">⚡ ACTION NEEDED</div>
+      </div>
+
+      <div class="coaching-grid">
+        <div class="coaching-card-bold">
+          <div class="coaching-name-bold">
+            <span class="coaching-rank">🥇</span>
+            <span>TOMBAK</span>
+          </div>
+          <div class="coaching-stat-bold">
+            Akumulasi telat: <span class="coaching-big-num">181 menit</span>
+          </div>
+          <div class="coaching-meta-bold">
+            <div class="coaching-detail-bold">
+              <span class="coaching-detail-label-bold">Hari Telat</span>
+              <span class="coaching-detail-value-bold">3/5</span>
+            </div>
+            <div class="coaching-detail-bold">
+              <span class="coaching-detail-label-bold">Avg/Hari</span>
+              <span class="coaching-detail-value-bold">60 mnt</span>
+            </div>
+            <div class="coaching-detail-bold">
+              <span class="coaching-detail-label-bold">Streak</span>
+              <span class="coaching-detail-value-bold">🔥 4 mgg</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="coaching-card-bold">
+          <div class="coaching-name-bold">
+            <span class="coaching-rank">🥈</span>
+            <span>DEWI</span>
+          </div>
+          <div class="coaching-stat-bold">
+            Akumulasi telat: <span class="coaching-big-num">98 menit</span>
+          </div>
+          <div class="coaching-meta-bold">
+            <div class="coaching-detail-bold">
+              <span class="coaching-detail-label-bold">Hari Telat</span>
+              <span class="coaching-detail-value-bold">4/5</span>
+            </div>
+            <div class="coaching-detail-bold">
+              <span class="coaching-detail-label-bold">Avg/Hari</span>
+              <span class="coaching-detail-value-bold">25 mnt</span>
+            </div>
+            <div class="coaching-detail-bold">
+              <span class="coaching-detail-label-bold">Streak</span>
+              <span class="coaching-detail-value-bold">🔥 2 mgg</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HALL OF LATE (BOLD RANKING) ============ -->
+    <section class="hall-section">
+      <div class="hall-header">
+        <div>
+          <div class="hall-title">
+            <span class="hall-icon-bold">⏰</span>
+            <span>HALL OF LATE — Top 5 Minggu Ini</span>
+          </div>
+          <div class="hall-subtitle">Total menit keterlambatan, urut dari yang terbanyak. 🔥 = repeat offender (3+ minggu berturut)</div>
+        </div>
+      </div>
+
+      <div class="ranking-bold">
+        <div class="rank-row-bold top1">
+          <div class="rank-medal">🥇</div>
+          <div>
+            <div class="rank-name-bold">TOMBAK <span class="repeat-icon">🔥</span></div>
+            <div class="rank-meta-bold">3 hari telat · max 161 mnt (1 Apr) · over coaching threshold</div>
+          </div>
+          <div class="rank-bar-container-bold"><div class="rank-bar-bold" style="width: 100%"></div></div>
+          <div class="rank-value-bold">181 mnt</div>
+        </div>
+
+        <div class="rank-row-bold top2">
+          <div class="rank-medal">🥈</div>
+          <div>
+            <div class="rank-name-bold">DEWI <span class="repeat-icon">🔥</span></div>
+            <div class="rank-meta-bold">4 hari telat · max 32 mnt (5 Apr) · over coaching threshold</div>
+          </div>
+          <div class="rank-bar-container-bold"><div class="rank-bar-bold" style="width: 54%"></div></div>
+          <div class="rank-value-bold">98 mnt</div>
+        </div>
+
+        <div class="rank-row-bold top3">
+          <div class="rank-medal">🥉</div>
+          <div>
+            <div class="rank-name-bold">RUDI</div>
+            <div class="rank-meta-bold">2 hari telat · max 28 mnt (4 Apr)</div>
+          </div>
+          <div class="rank-bar-container-bold"><div class="rank-bar-bold below" style="width: 26%"></div></div>
+          <div class="rank-value-bold below">47 mnt</div>
+        </div>
+
+        <div class="rank-row-bold">
+          <div class="rank-position">#4</div>
+          <div>
+            <div class="rank-name-bold">SARI <span class="repeat-icon">🔥</span></div>
+            <div class="rank-meta-bold">3 hari telat · max 14 mnt (3 Apr)</div>
+          </div>
+          <div class="rank-bar-container-bold"><div class="rank-bar-bold below" style="width: 17%"></div></div>
+          <div class="rank-value-bold below">31 mnt</div>
+        </div>
+
+        <div class="rank-row-bold">
+          <div class="rank-position">#5</div>
+          <div>
+            <div class="rank-name-bold">ANDIKA</div>
+            <div class="rank-meta-bold">2 hari telat · max 15 mnt (8 Apr)</div>
+          </div>
+          <div class="rank-bar-container-bold"><div class="rank-bar-bold below" style="width: 11%"></div></div>
+          <div class="rank-value-bold below">21 mnt</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CHARTS ============ -->
+    <div class="chart-row">
+      <section class="chart-section">
+        <div class="chart-title">📈 Tren Issue 4 Minggu Terakhir</div>
+        <div class="chart-mock">
+          <div class="chart-bar" style="height: 72%"></div>
+          <div class="chart-bar" style="height: 88%"></div>
+          <div class="chart-bar" style="height: 64%"></div>
+          <div class="chart-bar" style="height: 45%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-around;margin-top:8px;font-size:0.7rem;color:#A78BFA;">
+          <span>W1</span><span>W2</span><span>W3</span><span>W4 (now)</span>
+        </div>
+      </section>
+
+      <section class="chart-section">
+        <div class="chart-title">🥧 Distribusi Alasan Issue</div>
+        <div class="reason-list">
+          <div class="reason-row">
+            <div class="reason-dot" style="background:#7C3AED"></div>
+            <div class="reason-name">Tugas Lapangan</div>
+            <div class="reason-count">4 · 33%</div>
+          </div>
+          <div class="reason-row">
+            <div class="reason-dot" style="background:#F472B6"></div>
+            <div class="reason-name">Izin Sakit</div>
+            <div class="reason-count">3 · 25%</div>
+          </div>
+          <div class="reason-row">
+            <div class="reason-dot" style="background:#FBBF24"></div>
+            <div class="reason-name">Lupa Absen</div>
+            <div class="reason-count">2 · 17%</div>
+          </div>
+          <div class="reason-row">
+            <div class="reason-dot" style="background:#94A3B8"></div>
+            <div class="reason-name">Belum Ada Kabar</div>
+            <div class="reason-count">3 · 25%</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer-note">
+      <strong style="color:#F472B6">💡 Pro tip:</strong> Coaching threshold (75 mnt/minggu) dan late thresholds bisa diatur di Settings. Kalau kebijakan perusahaan berubah, langsung ubah di sana — tidak perlu modif code.
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

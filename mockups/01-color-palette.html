@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>HR App — Color Palette Direction</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 32px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 48px; }
+  h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { color: var(--text-muted); font-size: 1rem; }
+  .palette-grid { display: grid; grid-template-columns: 1fr; gap: 32px; }
+
+  .palette-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .palette-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .palette-title { font-size: 1.5rem; font-weight: 700; }
+  .palette-vibe { font-size: 0.875rem; color: var(--text-muted); font-style: italic; }
+
+  .swatches {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px;
+  }
+  .swatch {
+    aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 4px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05); position: relative;
+  }
+  .swatch-label {
+    font-size: 0.625rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; opacity: 0.85;
+  }
+  .swatch-hex {
+    font-size: 0.625rem; font-family: 'Courier New', monospace; opacity: 0.75; margin-top: 2px;
+  }
+
+  .preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .mini-app {
+    border-radius: 12px; overflow: hidden; border: 1px solid var(--border);
+    aspect-ratio: 1.4; display: flex; flex-direction: column;
+  }
+  .mini-app-header {
+    padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .mini-logo {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 1rem; color: white;
+  }
+  .mini-title { font-weight: 700; font-size: 0.875rem; }
+  .mini-app-body { padding: 12px 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .mini-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px; border-radius: 6px; font-size: 0.7rem;
+  }
+  .mini-row .name { font-weight: 600; }
+  .mini-row .meta { font-family: 'Courier New', monospace; font-size: 0.65rem; opacity: 0.85; }
+  .mode-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 6px;
+  }
+
+  /* ======== PALETTE A: Indigo Aurora ======== */
+  .pal-a-primary { background: #6366F1; color: white; }
+  .pal-a-accent { background: #14B8A6; color: white; }
+  .pal-a-highlight { background: #F59E0B; color: white; }
+  .pal-a-ok { background: #10B981; color: white; }
+  .pal-a-warn { background: #FBBF24; color: #422006; }
+  .pal-a-bad { background: #EF4444; color: white; }
+  .pal-a-pulang { background: #FB923C; color: white; }
+
+  .pal-a-light { background: #f8fafc; color: #0f172a; }
+  .pal-a-light .mini-app-header { background: #ffffff; border-bottom-color: #e2e8f0; }
+  .pal-a-light .mini-logo { background: #6366F1; }
+  .pal-a-light .row-late-mild { background: #FEF3C7; color: #78350f; }
+  .pal-a-light .row-late-bad { background: #FEE2E2; color: #7f1d1d; }
+  .pal-a-light .row-pulang { background: #FFEDD5; color: #7c2d12; }
+  .pal-a-light .row-resolved { background: #D1FAE5; color: #064E3B; }
+  .pal-a-light .row-pending { background: #f1f5f9; color: #1e293b; }
+
+  .pal-a-dark { background: #0f172a; color: #e2e8f0; }
+  .pal-a-dark .mini-app-header { background: #1e293b; border-bottom-color: #334155; }
+  .pal-a-dark .mini-logo { background: linear-gradient(135deg, #6366F1, #14B8A6); }
+  .pal-a-dark .row-late-mild { background: rgba(251, 191, 36, 0.15); color: #FCD34D; }
+  .pal-a-dark .row-late-bad { background: rgba(239, 68, 68, 0.15); color: #FCA5A5; }
+  .pal-a-dark .row-pulang { background: rgba(251, 146, 60, 0.15); color: #FDBA74; }
+  .pal-a-dark .row-resolved { background: rgba(16, 185, 129, 0.15); color: #6EE7B7; }
+  .pal-a-dark .row-pending { background: rgba(99, 102, 241, 0.1); color: #C7D2FE; }
+
+  /* ======== PALETTE B: Sunset Coral ======== */
+  .pal-b-primary { background: #7C3AED; color: white; }
+  .pal-b-accent { background: #F472B6; color: white; }
+  .pal-b-highlight { background: #FBBF24; color: #422006; }
+  .pal-b-ok { background: #34D399; color: white; }
+  .pal-b-warn { background: #FCD34D; color: #422006; }
+  .pal-b-bad { background: #F87171; color: white; }
+  .pal-b-pulang { background: #C084FC; color: white; }
+
+  .pal-b-light { background: #faf5ff; color: #1e1b4b; }
+  .pal-b-light .mini-app-header { background: #ffffff; border-bottom-color: #e9d5ff; }
+  .pal-b-light .mini-logo { background: linear-gradient(135deg, #7C3AED, #F472B6); }
+  .pal-b-light .row-late-mild { background: #FEF3C7; color: #78350f; }
+  .pal-b-light .row-late-bad { background: #FECACA; color: #7f1d1d; }
+  .pal-b-light .row-pulang { background: #F3E8FF; color: #581c87; }
+  .pal-b-light .row-resolved { background: #DCFCE7; color: #14532d; }
+  .pal-b-light .row-pending { background: #faf5ff; color: #4c1d95; }
+
+  .pal-b-dark { background: #1a0b2e; color: #e9d5ff; }
+  .pal-b-dark .mini-app-header { background: #2d1b4e; border-bottom-color: #4c1d95; }
+  .pal-b-dark .mini-logo { background: linear-gradient(135deg, #A78BFA, #F472B6); }
+  .pal-b-dark .row-late-mild { background: rgba(252, 211, 77, 0.15); color: #FDE68A; }
+  .pal-b-dark .row-late-bad { background: rgba(248, 113, 113, 0.15); color: #FCA5A5; }
+  .pal-b-dark .row-pulang { background: rgba(192, 132, 252, 0.15); color: #DDD6FE; }
+  .pal-b-dark .row-resolved { background: rgba(52, 211, 153, 0.15); color: #6EE7B7; }
+  .pal-b-dark .row-pending { background: rgba(124, 58, 237, 0.15); color: #DDD6FE; }
+
+  /* ======== PALETTE C: Corporate Ocean ======== */
+  .pal-c-primary { background: #1E40AF; color: white; }
+  .pal-c-accent { background: #06B6D4; color: white; }
+  .pal-c-highlight { background: #EAB308; color: #422006; }
+  .pal-c-ok { background: #059669; color: white; }
+  .pal-c-warn { background: #F59E0B; color: white; }
+  .pal-c-bad { background: #DC2626; color: white; }
+  .pal-c-pulang { background: #0891B2; color: white; }
+
+  .pal-c-light { background: #f0f9ff; color: #0c1a3e; }
+  .pal-c-light .mini-app-header { background: #ffffff; border-bottom-color: #cbd5e1; }
+  .pal-c-light .mini-logo { background: #1E40AF; }
+  .pal-c-light .row-late-mild { background: #FEF3C7; color: #78350f; }
+  .pal-c-light .row-late-bad { background: #FEE2E2; color: #991b1b; }
+  .pal-c-light .row-pulang { background: #CFFAFE; color: #155e75; }
+  .pal-c-light .row-resolved { background: #D1FAE5; color: #065f46; }
+  .pal-c-light .row-pending { background: #e0f2fe; color: #075985; }
+
+  .pal-c-dark { background: #0c1a3e; color: #cbd5e1; }
+  .pal-c-dark .mini-app-header { background: #1E40AF; border-bottom-color: #1e3a8a; }
+  .pal-c-dark .mini-logo { background: #FFFFFF; color: #1E40AF; }
+  .pal-c-dark .row-late-mild { background: rgba(245, 158, 11, 0.18); color: #FCD34D; }
+  .pal-c-dark .row-late-bad { background: rgba(220, 38, 38, 0.18); color: #FCA5A5; }
+  .pal-c-dark .row-pulang { background: rgba(8, 145, 178, 0.2); color: #67E8F9; }
+  .pal-c-dark .row-resolved { background: rgba(5, 150, 105, 0.2); color: #6EE7B7; }
+  .pal-c-dark .row-pending { background: rgba(6, 182, 212, 0.15); color: #A5F3FC; }
+
+  .legend {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px;
+    padding: 12px; background: rgba(0,0,0,0.02); border-radius: 8px;
+    font-size: 0.75rem; color: var(--text-muted);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+  .pick-instruction {
+    background: linear-gradient(135deg, #6366F1, #14B8A6); color: white;
+    padding: 16px 24px; border-radius: 12px; text-align: center;
+    margin-top: 32px; font-weight: 600;
+  }
+
+  footer { text-align: center; margin-top: 32px; color: var(--text-muted); font-size: 0.875rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎨 Color Palette Direction</h1>
+    <p class="subtitle">3 arah berbeda — masing-masing punya feel yang khas. Pilih satu untuk dipakai sebagai design DNA aplikasi.</p>
+  </header>
+
+  <div class="palette-grid">
+
+    <!-- =================== PALETTE A =================== -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div>
+          <div class="palette-title">A · Indigo Aurora</div>
+          <div class="palette-vibe">Modern tech, calm, professional — vibe seperti Linear/Notion</div>
+        </div>
+      </div>
+
+      <div class="swatches">
+        <div class="swatch pal-a-primary"><div class="swatch-label">Primary</div><div class="swatch-hex">#6366F1</div></div>
+        <div class="swatch pal-a-accent"><div class="swatch-label">Accent</div><div class="swatch-hex">#14B8A6</div></div>
+        <div class="swatch pal-a-highlight"><div class="swatch-label">Highlight</div><div class="swatch-hex">#F59E0B</div></div>
+        <div class="swatch pal-a-ok"><div class="swatch-label">Resolved</div><div class="swatch-hex">#10B981</div></div>
+        <div class="swatch pal-a-warn"><div class="swatch-label">Late &lt;15</div><div class="swatch-hex">#FBBF24</div></div>
+        <div class="swatch pal-a-bad"><div class="swatch-label">Late ≥15</div><div class="swatch-hex">#EF4444</div></div>
+        <div class="swatch pal-a-pulang"><div class="swatch-label">Pulang Cepat</div><div class="swatch-hex">#FB923C</div></div>
+      </div>
+
+      <div class="preview-row">
+        <div>
+          <div class="mode-label">☀️ Light Mode</div>
+          <div class="mini-app pal-a-light">
+            <div class="mini-app-header">
+              <div class="mini-logo">J</div>
+              <div class="mini-title">Weekly Issues — Apr 1-10</div>
+            </div>
+            <div class="mini-app-body">
+              <div class="mini-row row-late-mild"><span class="name">ANDIKA</span><span class="meta">Late 6 min</span></div>
+              <div class="mini-row row-late-bad"><span class="name">TOMBAK</span><span class="meta">Late 161 min</span></div>
+              <div class="mini-row row-pulang"><span class="name">DEWI</span><span class="meta">Early 30 min</span></div>
+              <div class="mini-row row-pending"><span class="name">ESA</span><span class="meta">Absent — pending</span></div>
+              <div class="mini-row row-resolved"><span class="name">RUDI</span><span class="meta">✓ Tugas Lapangan</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="mode-label">🌙 Dark Mode</div>
+          <div class="mini-app pal-a-dark">
+            <div class="mini-app-header">
+              <div class="mini-logo">J</div>
+              <div class="mini-title">Weekly Issues — Apr 1-10</div>
+            </div>
+            <div class="mini-app-body">
+              <div class="mini-row row-late-mild"><span class="name">ANDIKA</span><span class="meta">Late 6 min</span></div>
+              <div class="mini-row row-late-bad"><span class="name">TOMBAK</span><span class="meta">Late 161 min</span></div>
+              <div class="mini-row row-pulang"><span class="name">DEWI</span><span class="meta">Early 30 min</span></div>
+              <div class="mini-row row-pending"><span class="name">ESA</span><span class="meta">Absent — pending</span></div>
+              <div class="mini-row row-resolved"><span class="name">RUDI</span><span class="meta">✓ Tugas Lapangan</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== PALETTE B =================== -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div>
+          <div class="palette-title">B · Sunset Coral</div>
+          <div class="palette-vibe">Friendly, energetic, distinctive — vibe seperti Stripe/Vercel</div>
+        </div>
+      </div>
+
+      <div class="swatches">
+        <div class="swatch pal-b-primary"><div class="swatch-label">Primary</div><div class="swatch-hex">#7C3AED</div></div>
+        <div class="swatch pal-b-accent"><div class="swatch-label">Accent</div><div class="swatch-hex">#F472B6</div></div>
+        <div class="swatch pal-b-highlight"><div class="swatch-label">Highlight</div><div class="swatch-hex">#FBBF24</div></div>
+        <div class="swatch pal-b-ok"><div class="swatch-label">Resolved</div><div class="swatch-hex">#34D399</div></div>
+        <div class="swatch pal-b-warn"><div class="swatch-label">Late &lt;15</div><div class="swatch-hex">#FCD34D</div></div>
+        <div class="swatch pal-b-bad"><div class="swatch-label">Late ≥15</div><div class="swatch-hex">#F87171</div></div>
+        <div class="swatch pal-b-pulang"><div class="swatch-label">Pulang Cepat</div><div class="swatch-hex">#C084FC</div></div>
+      </div>
+
+      <div class="preview-row">
+        <div>
+          <div class="mode-label">☀️ Light Mode</div>
+          <div class="mini-app pal-b-light">
+            <div class="mini-app-header">
+              <div class="mini-logo">J</div>
+              <div class="mini-title">Weekly Issues — Apr 1-10</div>
+            </div>
+            <div class="mini-app-body">
+              <div class="mini-row row-late-mild"><span class="name">ANDIKA</span><span class="meta">Late 6 min</span></div>
+              <div class="mini-row row-late-bad"><span class="name">TOMBAK</span><span class="meta">Late 161 min</span></div>
+              <div class="mini-row row-pulang"><span class="name">DEWI</span><span class="meta">Early 30 min</span></div>
+              <div class="mini-row row-pending"><span class="name">ESA</span><span class="meta">Absent — pending</span></div>
+              <div class="mini-row row-resolved"><span class="name">RUDI</span><span class="meta">✓ Tugas Lapangan</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="mode-label">🌙 Dark Mode</div>
+          <div class="mini-app pal-b-dark">
+            <div class="mini-app-header">
+              <div class="mini-logo">J</div>
+              <div class="mini-title">Weekly Issues — Apr 1-10</div>
+            </div>
+            <div class="mini-app-body">
+              <div class="mini-row row-late-mild"><span class="name">ANDIKA</span><span class="meta">Late 6 min</span></div>
+              <div class="mini-row row-late-bad"><span class="name">TOMBAK</span><span class="meta">Late 161 min</span></div>
+              <div class="mini-row row-pulang"><span class="name">DEWI</span><span class="meta">Early 30 min</span></div>
+              <div class="mini-row row-pending"><span class="name">ESA</span><span class="meta">Absent — pending</span></div>
+              <div class="mini-row row-resolved"><span class="name">RUDI</span><span class="meta">✓ Tugas Lapangan</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== PALETTE C =================== -->
+    <div class="palette-card">
+      <div class="palette-header">
+        <div>
+          <div class="palette-title">C · Corporate Ocean</div>
+          <div class="palette-vibe">Traditional pro, trustworthy — vibe seperti IBM/banking apps</div>
+        </div>
+      </div>
+
+      <div class="swatches">
+        <div class="swatch pal-c-primary"><div class="swatch-label">Primary</div><div class="swatch-hex">#1E40AF</div></div>
+        <div class="swatch pal-c-accent"><div class="swatch-label">Accent</div><div class="swatch-hex">#06B6D4</div></div>
+        <div class="swatch pal-c-highlight"><div class="swatch-label">Highlight</div><div class="swatch-hex">#EAB308</div></div>
+        <div class="swatch pal-c-ok"><div class="swatch-label">Resolved</div><div class="swatch-hex">#059669</div></div>
+        <div class="swatch pal-c-warn"><div class="swatch-label">Late &lt;15</div><div class="swatch-hex">#F59E0B</div></div>
+        <div class="swatch pal-c-bad"><div class="swatch-label">Late ≥15</div><div class="swatch-hex">#DC2626</div></div>
+        <div class="swatch pal-c-pulang"><div class="swatch-label">Pulang Cepat</div><div class="swatch-hex">#0891B2</div></div>
+      </div>
+
+      <div class="preview-row">
+        <div>
+          <div class="mode-label">☀️ Light Mode</div>
+          <div class="mini-app pal-c-light">
+            <div class="mini-app-header">
+              <div class="mini-logo">J</div>
+              <div class="mini-title">Weekly Issues — Apr 1-10</div>
+            </div>
+            <div class="mini-app-body">
+              <div class="mini-row row-late-mild"><span class="name">ANDIKA</span><span class="meta">Late 6 min</span></div>
+              <div class="mini-row row-late-bad"><span class="name">TOMBAK</span><span class="meta">Late 161 min</span></div>
+              <div class="mini-row row-pulang"><span class="name">DEWI</span><span class="meta">Early 30 min</span></div>
+              <div class="mini-row row-pending"><span class="name">ESA</span><span class="meta">Absent — pending</span></div>
+              <div class="mini-row row-resolved"><span class="name">RUDI</span><span class="meta">✓ Tugas Lapangan</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="mode-label">🌙 Dark Mode</div>
+          <div class="mini-app pal-c-dark">
+            <div class="mini-app-header">
+              <div class="mini-logo">J</div>
+              <div class="mini-title">Weekly Issues — Apr 1-10</div>
+            </div>
+            <div class="mini-app-body">
+              <div class="mini-row row-late-mild"><span class="name">ANDIKA</span><span class="meta">Late 6 min</span></div>
+              <div class="mini-row row-late-bad"><span class="name">TOMBAK</span><span class="meta">Late 161 min</span></div>
+              <div class="mini-row row-pulang"><span class="name">DEWI</span><span class="meta">Early 30 min</span></div>
+              <div class="mini-row row-pending"><span class="name">ESA</span><span class="meta">Absent — pending</span></div>
+              <div class="mini-row row-resolved"><span class="name">RUDI</span><span class="meta">✓ Tugas Lapangan</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pick-instruction">
+    Pilih: <strong>A</strong>, <strong>B</strong>, atau <strong>C</strong> — atau bilang "kombinasi A primary + B accent" kalau mau remix
+  </div>
+
+  <footer>
+    Mockup ini cuma preview rasa — UI Flet sebenarnya akan jauh lebih halus dengan Material Design 3
+  </footer>
+</div>
+</body>
+</html>
