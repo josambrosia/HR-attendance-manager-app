@@ -1,0 +1,124 @@
+import flet as ft
+from src.core.constants import COLORS
+from src.core.settings_store import SettingsStore
+from src.ui.components.logo import hexagon_j
+from src.ui.pages import _placeholder
+
+NAV_GROUPS = [
+    ("Workflow", [
+        ("import_data", "Import Data", ft.Icons.UPLOAD_FILE),
+        ("issues", "Issues", ft.Icons.WARNING_AMBER),
+        ("dashboard", "Dashboard", ft.Icons.DASHBOARD),
+    ]),
+    ("Reports", [
+        ("weekly_report", "Weekly Report", ft.Icons.CALENDAR_VIEW_WEEK),
+        ("monthly_report", "Monthly Report", ft.Icons.CALENDAR_MONTH),
+    ]),
+    ("Tools", [
+        ("edit_records", "Edit Records", ft.Icons.EDIT),
+        ("backup_restore", "Backup / Restore", ft.Icons.BACKUP),
+        ("settings", "Settings", ft.Icons.SETTINGS),
+    ]),
+]
+
+
+class Shell:
+    def __init__(self, page: ft.Page, settings: SettingsStore):
+        self.page = page
+        self.settings = settings
+        self.mode = settings.get("theme", "dark")
+        self.current_route = "dashboard"
+        self.content_area = ft.Container(expand=True)
+        self.nav_buttons = {}
+
+    def build(self) -> ft.Control:
+        self._apply_theme()
+        sidebar = self._build_sidebar()
+        self._render_page(self.current_route)
+        return ft.Row(
+            expand=True, spacing=0,
+            controls=[sidebar, self.content_area],
+        )
+
+    def _build_sidebar(self) -> ft.Control:
+        nav_items = []
+        for section_label, items in NAV_GROUPS:
+            nav_items.append(
+                ft.Text(section_label.upper(), size=10, weight=ft.FontWeight.W_700,
+                        color=COLORS["accent"], opacity=0.8)
+            )
+            for route, label, icon in items:
+                btn = self._make_nav_button(route, label, icon)
+                self.nav_buttons[route] = btn
+                nav_items.append(btn)
+            nav_items.append(ft.Container(height=8))
+
+        return ft.Container(
+            width=240,
+            bgcolor=COLORS["surface_dark"] if self.mode == "dark" else COLORS["surface_light"],
+            padding=16,
+            content=ft.Column(
+                expand=True,
+                controls=[
+                    hexagon_j(size=40, with_wordmark=True, mode=self.mode),
+                    ft.Container(height=20),
+                    ft.Column(controls=nav_items, spacing=2),
+                    ft.Container(expand=True),  # spacer
+                    self._build_theme_toggle(),
+                ],
+            ),
+        )
+
+    def _make_nav_button(self, route: str, label: str, icon) -> ft.Control:
+        is_active = route == self.current_route
+        return ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=10),
+            border_radius=8,
+            bgcolor=f"{COLORS['primary']}33" if is_active else None,
+            content=ft.Row(spacing=10, controls=[
+                ft.Icon(icon, size=18,
+                        color=COLORS["text_dark"] if self.mode == "dark" else COLORS["text_light"]),
+                ft.Text(label, size=14,
+                        weight=ft.FontWeight.W_600 if is_active else ft.FontWeight.W_500),
+            ]),
+            on_click=lambda e, r=route: self._navigate(r),
+            ink=True,
+        )
+
+    def _build_theme_toggle(self) -> ft.Control:
+        is_dark = self.mode == "dark"
+        return ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=8),
+            border_radius=8,
+            bgcolor=f"{COLORS['accent']}22",
+            content=ft.Row(spacing=8, controls=[
+                ft.Icon(ft.Icons.DARK_MODE if is_dark else ft.Icons.LIGHT_MODE, size=16),
+                ft.Text("Dark Mode" if is_dark else "Light Mode", size=12),
+            ]),
+            on_click=lambda e: self._toggle_theme(),
+            ink=True,
+        )
+
+    def _navigate(self, route: str):
+        self.current_route = route
+        # Rebuild sidebar so active state updates
+        self.page.controls.clear()
+        self.page.add(self.build())
+        self.page.update()
+
+    def _toggle_theme(self):
+        self.mode = "light" if self.mode == "dark" else "dark"
+        self.settings.update({"theme": self.mode})
+        self._apply_theme()
+        self.page.controls.clear()
+        self.page.add(self.build())
+        self.page.update()
+
+    def _apply_theme(self):
+        self.page.bgcolor = COLORS["bg_dark"] if self.mode == "dark" else COLORS["bg_light"]
+        self.page.theme_mode = ft.ThemeMode.DARK if self.mode == "dark" else ft.ThemeMode.LIGHT
+
+    def _render_page(self, route: str):
+        # Placeholder for now; real pages plug in during later phases
+        page_titles = {r: l for _, items in NAV_GROUPS for r, l, _ in items}
+        self.content_area.content = _placeholder.build(page_titles.get(route, route), self.mode)
