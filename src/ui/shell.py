@@ -29,7 +29,19 @@ class Shell:
         self.mode = settings.get("theme", "dark")
         self.current_route = "dashboard"
         self.content_area = ft.Container(expand=True)
-        self.nav_buttons = {}
+        self._route_builders = self._init_route_builders()
+
+    def _init_route_builders(self) -> dict:
+        """Map route name -> builder callable. Builders take no args (use self.mode etc).
+
+        Future tasks will replace placeholder entries with real page builders.
+        Each builder returns the ft.Control to mount in content_area.
+        """
+        return {
+            route: (lambda r=route, t=label: _placeholder.build(t, self.mode))
+            for _, items in NAV_GROUPS
+            for route, label, _ in items
+        }
 
     def build(self) -> ft.Control:
         self._apply_theme()
@@ -48,9 +60,7 @@ class Shell:
                         color=COLORS["accent"], opacity=0.8)
             )
             for route, label, icon in items:
-                btn = self._make_nav_button(route, label, icon)
-                self.nav_buttons[route] = btn
-                nav_items.append(btn)
+                nav_items.append(self._make_nav_button(route, label, icon))
             nav_items.append(ft.Container(height=8))
 
         return ft.Container(
@@ -119,6 +129,9 @@ class Shell:
         self.page.theme_mode = ft.ThemeMode.DARK if self.mode == "dark" else ft.ThemeMode.LIGHT
 
     def _render_page(self, route: str):
-        # Placeholder for now; real pages plug in during later phases
-        page_titles = {r: l for _, items in NAV_GROUPS for r, l, _ in items}
-        self.content_area.content = _placeholder.build(page_titles.get(route, route), self.mode)
+        builder = self._route_builders.get(route)
+        if builder is None:
+            # Fallback for unknown route
+            self.content_area.content = _placeholder.build(route, self.mode)
+            return
+        self.content_area.content = builder()
