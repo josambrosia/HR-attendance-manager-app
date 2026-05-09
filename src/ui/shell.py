@@ -104,7 +104,7 @@ class Shell:
     def _build_issues_page(self) -> ft.Control:
         from src.ui.pages.issues import IssuesPage
         page_obj = IssuesPage(
-            self.repo, self.settings, self.mode,
+            self.page, self.repo, self.settings, self.mode,
             on_data_changed=self.invalidate_data_caches,
             show_loading=self.show_loading,
             hide_loading=self.hide_loading,

@@ -16,9 +16,11 @@ CASE_LABELS = {
 
 
 class IssuesPage:
-    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark",
+    def __init__(self, page: ft.Page, repo: Repository, settings: SettingsStore,
+                 mode: str = "dark",
                  on_data_changed=None,
                  show_loading=None, hide_loading=None, notify=None):
+        self.page = page
         self.repo = repo
         self.settings = settings
         self.mode = mode
@@ -30,10 +32,13 @@ class IssuesPage:
         today = date.today()
         self.start = today - timedelta(days=today.weekday())
         self.end = self.start + timedelta(days=6)
-        self.selected_record_id = None
-        self.selected_employee_name = ""
-        self.selected_reason = None
         self._refresh_timer = None
+        # Filled in build() — kept here so methods can reference safely before build
+        self.list_view: ft.Column | None = None
+        self._stat_pending: ft.Container | None = None
+        self._stat_resolved: ft.Container | None = None
+        self._stat_total: ft.Container | None = None
+        self._modal: "ResolveModal | None" = None
 
     def build(self) -> ft.Control:
         self.list_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=6, expand=True)
