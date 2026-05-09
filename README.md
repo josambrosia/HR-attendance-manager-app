@@ -20,13 +20,21 @@ See `docs/superpowers/specs/2026-05-09-josaphat-tech-attendance-design.md`.
 
 After completing development setup (`pip install -r requirements.txt`):
 
+Easy way — use the helper script:
 ```
-flet pack main.py --name "JosaphatTechHR" --icon assets/icon.ico --product-name "Josaphat Tech Solution HR Attendance Manager" --product-version "1.0.1"
+python scripts/build_exe.py
+```
+
+Or invoke `flet pack` directly:
+```
+flet pack main.py --name "JosaphatTechHR" --icon assets/icon.ico --product-name "Josaphat Tech Solution HR Attendance Manager" --product-version "1.0.2" --add-data "src/db/schema.sql;src/db" --add-data "assets/logo.svg;assets"
 ```
 
 > Requires `pyinstaller` (install with `pip install pyinstaller` if not already present — `flet pack` invokes it under the hood).
 >
 > **Important:** Pack `main.py` from the project root, not `src/main.py`. The earlier path produced a broken bundle that crashed at startup with `ModuleNotFoundError: No module named 'src'`.
+>
+> **`--add-data` is required** so the SQLite schema and built-in logo SVG are bundled inside the .exe. Without these the app starts but errors at first DB init or PDF render.
 
 Output: `dist/JosaphatTechHR.exe` (~80-120 MB).
 

@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
@@ -8,14 +9,29 @@ from reportlab.graphics import renderPDF
 from svglib.svglib import svg2rlg
 from src.core.constants import COLORS
 
-ROOT = Path(__file__).parent.parent.parent
-LOGO_BUILTIN = ROOT / "assets" / "logo.svg"
-LOGO_CUSTOM = ROOT / "assets" / "logo-custom.svg"
+
+def _user_dir() -> Path:
+    """Where data/, config.json, and user-replaceable assets live.
+    Next to the .exe when frozen; project root in dev."""
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).parent
+    return Path(__file__).resolve().parent.parent.parent
 
 
-def _resolve_logo_path():
-    """Prefer user-provided custom logo; fallback to built-in placeholder."""
-    return LOGO_CUSTOM if LOGO_CUSTOM.exists() else LOGO_BUILTIN
+def _bundled_dir() -> Path:
+    """Where files shipped with the app live (read-only).
+    sys._MEIPASS when frozen; project root in dev."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parent.parent.parent
+
+
+def _resolve_logo_path() -> Path:
+    """Prefer user-provided custom logo (next to .exe); fallback to built-in placeholder (bundled)."""
+    custom = _user_dir() / "assets" / "logo-custom.svg"
+    if custom.exists():
+        return custom
+    return _bundled_dir() / "assets" / "logo.svg"
 
 PURPLE = colors.HexColor(COLORS["primary"])
 PINK = colors.HexColor(COLORS["accent"])

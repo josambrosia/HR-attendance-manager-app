@@ -1,8 +1,18 @@
 import sqlite3
+import sys
 from datetime import datetime
 from pathlib import Path
 
-SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+
+def _resolve_schema_path() -> Path:
+    """schema.sql ships with the app. PyInstaller --onefile extracts it
+    to sys._MEIPASS; from source it sits next to repository.py."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "src" / "db" / "schema.sql"
+    return Path(__file__).parent / "schema.sql"
+
+
+SCHEMA_PATH = _resolve_schema_path()
 
 
 class Repository:

@@ -27,7 +27,7 @@ ENTRY_SCRIPT = PROJECT_ROOT / "main.py"
 ICON = PROJECT_ROOT / "assets" / "icon.ico"
 OUTPUT_NAME = "JosaphatTechHR"
 PRODUCT_NAME = "Josaphat Tech Solution HR Attendance Manager"
-PRODUCT_VERSION = "1.0.1"
+PRODUCT_VERSION = "1.0.2"
 COPYRIGHT = "Josaphat Tech Solution"
 
 
@@ -45,6 +45,13 @@ def main() -> int:
         print("    pip install -r requirements.txt", file=sys.stderr)
         return 1
 
+    # Data files that must be inside the bundle (read-only, ship with app).
+    # Format: "<src>;<dest_in_bundle>" on Windows.
+    data_specs = [
+        f"{PROJECT_ROOT / 'src' / 'db' / 'schema.sql'};src/db",
+        f"{PROJECT_ROOT / 'assets' / 'logo.svg'};assets",
+    ]
+
     cmd = [
         flet_exe,
         "pack",
@@ -56,6 +63,8 @@ def main() -> int:
         "--copyright", COPYRIGHT,
         "-y",
     ]
+    for spec in data_specs:
+        cmd.extend(["--add-data", spec])
 
     print("Running:", " ".join(cmd))
     result = subprocess.run(cmd, cwd=PROJECT_ROOT)
