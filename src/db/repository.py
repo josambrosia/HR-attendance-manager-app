@@ -234,3 +234,83 @@ class Repository:
             (start_date, end_date, pattern, pattern),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+    def list_monthly_grid(self, year: int, month: int,
+                          staff_no_filter: str | None = None) -> list[dict]:
+        """Return one row per (active employee, day-of-month) for the given period.
+
+        Rows where attendance_records doesn't exist are skeleton rows with
+        actual_in/out=None but day_name and day_type populated. Used by Main
+        Database page to show 'format ready, awaiting import' rows.
+        """
+        from calendar import monthrange
+        from datetime import date as _date
+
+        days_in_month = monthrange(year, month)[1]
+        day_name_id = {0: "Senin", 1: "Selasa", 2: "Rabu", 3: "Kamis",
+                       4: "Jumat", 5: "Sabtu", 6: "Minggu"}
+
+        # Fetch employees
+        if staff_no_filter:
+            emp_cursor = self.conn.execute(
+                "SELECT * FROM employees WHERE active=1 AND staff_no=? ORDER BY name",
+                (staff_no_filter,),
+            )
+        else:
+            emp_cursor = self.conn.execute(
+                "SELECT * FROM employees WHERE active=1 ORDER BY name"
+            )
+        employees = [dict(row) for row in emp_cursor.fetchall()]
+
+        # Fetch all attendance + resolution data for this month in one shot
+        start_iso = f"{year:04d}-{month:02d}-01"
+        end_iso = f"{year:04d}-{month:02d}-{days_in_month:02d}"
+        data_cursor = self.conn.execute(
+            """SELECT ar.*, r.reason_code, r.location, r.reason_detail
+               FROM attendance_records ar
+               LEFT JOIN resolutions r ON r.record_id = ar.id
+               WHERE ar.date >= ? AND ar.date <= ?""",
+            (start_iso, end_iso),
+        )
+        by_emp_date = {}
+        for row in data_cursor.fetchall():
+            by_emp_date[(row["employee_id"], row["date"])] = dict(row)
+
+        # Build the grid
+        grid = []
+        for emp in employees:
+            for day in range(1, days_in_month + 1):
+                d = _date(year, month, day)
+                iso = d.isoformat()
+                weekday = d.weekday()
+                day_type = "Istirahat" if weekday >= 5 else "Hari Kerja"
+
+                existing = by_emp_date.get((emp["id"], iso))
+                if existing:
+                    row = existing
+                    row["staff_no"] = emp["staff_no"]
+                    row["name"] = emp["name"]
+                    row["department"] = emp["department"]
+                    # Make sure day_name/day_type are populated even if blank in DB
+                    row["day_name"] = row.get("day_name") or day_name_id[weekday]
+                    row["day_type"] = row.get("day_type") or day_type
+                else:
+                    row = {
+                        "id": None,
+                        "employee_id": emp["id"],
+                        "staff_no": emp["staff_no"],
+                        "name": emp["name"],
+                        "department": emp["department"],
+                        "date": iso,
+                        "day_name": day_name_id[weekday],
+                        "day_type": day_type,
+                        "schedule_in": None, "schedule_out": None,
+                        "actual_in": None, "actual_out": None,
+                        "late_minutes": None, "early_leave_minutes": None,
+                        "work_hours": None, "overtime_hours": None,
+                        "absent_flag": None, "forgot_punch_flag": None,
+                        "issue_case": None, "import_batch_id": None,
+                        "reason_code": None, "location": None, "reason_detail": None,
+                    }
+                grid.append(row)
+        return grid
