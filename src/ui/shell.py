@@ -54,6 +54,8 @@ class Shell:
                     builders[route] = self._build_dashboard_page
                 elif route == "weekly_report":
                     builders[route] = self._build_weekly_report_page
+                elif route == "monthly_report":
+                    builders[route] = self._build_monthly_report_page
                 else:
                     # Capture per-iteration via default args
                     builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
@@ -83,6 +85,12 @@ class Shell:
         from src.ui.pages.weekly_report import WeeklyReportPage
         exports_dir = Path(self.snapshot_dir).parent / "data" / "exports"
         page_obj = WeeklyReportPage(self.repo, self.settings, str(exports_dir), self.mode)
+        return page_obj.build()
+
+    def _build_monthly_report_page(self) -> ft.Control:
+        from src.ui.pages.monthly_report import MonthlyReportPage
+        exports_dir = Path(self.snapshot_dir).parent / "data" / "exports"
+        page_obj = MonthlyReportPage(self.repo, self.settings, str(exports_dir), self.mode)
         return page_obj.build()
 
     def build(self) -> ft.Control:
