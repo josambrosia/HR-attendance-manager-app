@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Issues — List + Resolve Modal (Final)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+    background: #0f0717;
+    color: #e9d5ff;
+    padding: 32px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 1.6rem; font-weight: 800; color: #f5f3ff; margin-bottom: 6px; }
+  h2 { font-size: 1.1rem; font-weight: 800; color: #C084FC; margin-top: 36px; margin-bottom: 8px; letter-spacing: 0.02em; }
+  .subtitle { color: #A78BFA; font-size: 0.9rem; margin-bottom: 24px; max-width: 800px; line-height: 1.5; }
+  .section-intro { color: #DDD6FE; font-size: 0.85rem; margin: 8px 0 16px; max-width: 900px; line-height: 1.5; }
+
+  /* ============ APP STAGE ============ */
+  .stage {
+    position: relative;
+    background: #1a0b2e;
+    border: 1px solid #4c1d95;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 820px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+  }
+
+  /* Sidebar (compact) */
+  .sidebar {
+    background: #2d1b4e;
+    border-right: 1px solid #4c1d95;
+    padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .logo-block { display: flex; align-items: center; gap: 10px; padding: 8px; }
+  .icon-hex {
+    width: 36px; height: 40px;
+    background: linear-gradient(135deg, #7C3AED, #F472B6);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 16px;
+  }
+  .wordmark-brand { font-weight: 800; font-size: 0.85rem; color: #f5f3ff; }
+  .wordmark-tagline { font-weight: 500; font-size: 0.65rem; color: #C084FC; }
+  .nav-section { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
+                  color: #A78BFA; padding: 8px 10px 4px; font-weight: 700; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+    border-radius: 7px; font-size: 0.82rem; color: #DDD6FE; cursor: pointer;
+  }
+  .nav-item.active {
+    background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(244,114,182,0.2));
+    color: #f5f3ff; font-weight: 600;
+  }
+
+  /* Main content */
+  .main { padding: 18px 22px; overflow: hidden; position: relative; }
+  .page-title { font-size: 1.4rem; font-weight: 800; color: #f5f3ff; }
+  .page-subtitle { font-size: 0.78rem; opacity: 0.7; margin-top: 4px; }
+  .period-nav { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #DDD6FE; }
+  .chev { color: #A78BFA; cursor: pointer; padding: 4px; font-size: 1.2rem; }
+
+  /* Section divider in list */
+  .list-divider {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 4px 6px;
+    color: #C084FC; font-size: 0.8rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .divider-line { flex: 1; height: 1px;
+                   background: linear-gradient(90deg, rgba(192,132,252,0.4), transparent); }
+  .divider-count {
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 0.7rem; font-weight: 800;
+  }
+  .divider-pending { background: rgba(248,113,113,0.18); color: #FCA5A5; }
+  .divider-resolved { background: rgba(52,211,153,0.18); color: #6EE7B7; }
+
+  /* Issue rows */
+  .issue-list { display: flex; flex-direction: column; gap: 4px;
+                margin-top: 6px; max-height: 700px; overflow: auto; padding-right: 4px; }
+  .issue {
+    padding: 10px 14px; border-radius: 8px;
+    display: flex; gap: 14px; align-items: center;
+    font-size: 0.83rem; cursor: pointer;
+    border-left: 3px solid;
+    transition: background 0.12s;
+  }
+  .issue:hover { background: rgba(167,139,250,0.08); }
+  .issue.unresolved { background: rgba(248,113,113,0.10); border-left-color: #F87171; }
+  .issue.unresolved:hover { background: rgba(248,113,113,0.18); }
+  .issue.unresolved.selected { background: rgba(248,113,113,0.25); }
+  .issue.resolved {
+    background: rgba(52,211,153,0.06);
+    border-left-color: #34D399;
+    opacity: 0.78;
+  }
+  .issue.resolved:hover { background: rgba(52,211,153,0.14); opacity: 1; }
+
+  .issue-name { font-weight: 700; color: #f5f3ff; flex: 0 0 130px; }
+  .issue-date { font-size: 0.7rem; color: #C084FC; opacity: 0.85; }
+  .issue-times {
+    font-family: 'Courier New', monospace; font-size: 0.78rem;
+    flex: 0 0 200px;
+  }
+  .issue-times .lbl { opacity: 0.55; }
+  .issue-times .v-empty { color: #F87171; }
+  .issue-times .v-time { color: #34D399; }
+
+  .issue-resolution {
+    flex: 1; font-size: 0.78rem; color: #BBF7D0;
+    font-style: italic;
+  }
+  .issue-resolution-empty {
+    flex: 1; font-size: 0.72rem; color: #A78BFA;
+    opacity: 0.45; font-style: italic;
+  }
+
+  .issue-case-badge {
+    padding: 3px 12px; border-radius: 8px; font-size: 0.7rem;
+    font-weight: 700; color: white;
+    flex: 0 0 auto; min-width: 80px; text-align: center;
+  }
+  .badge-absent { background: #F87171; }
+  .badge-pulang { background: #C084FC; }
+  .badge-lupa-mild { background: #FCD34D; color: #2d1b4e; }
+
+  .issue-status-badge {
+    padding: 4px 12px; border-radius: 999px; font-size: 0.7rem;
+    font-weight: 800; flex: 0 0 auto; min-width: 95px; text-align: center;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+  }
+  .status-pending {
+    background: rgba(248,113,113,0.18);
+    color: #FCA5A5;
+    border: 1px solid rgba(248,113,113,0.45);
+  }
+  .status-resolved {
+    background: rgba(52,211,153,0.18);
+    color: #6EE7B7;
+    border: 1px solid rgba(52,211,153,0.45);
+  }
+
+  /* Header row */
+  .page-header-row {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(167,139,250,0.2);
+    margin-bottom: 4px;
+  }
+
+  /* ============ MODAL DIALOG ============ */
+  .modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(15,7,23,0.78);
+    backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .modal-card {
+    background: #2d1b4e;
+    border: 2px solid #7C3AED;
+    border-radius: 16px;
+    width: 720px;
+    max-height: 92%;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(124,58,237,0.4);
+    display: flex; flex-direction: column;
+  }
+  .modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(167,139,250,0.2);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .modal-title { font-size: 1.3rem; font-weight: 800; color: #f5f3ff; }
+  .modal-meta { font-size: 0.85rem; color: #C084FC; }
+  .modal-close {
+    margin-left: auto; padding: 4px 10px; border-radius: 6px;
+    background: rgba(167,139,250,0.15); color: #DDD6FE;
+    font-size: 0.85rem; cursor: pointer;
+  }
+  .modal-issue-summary {
+    padding: 14px 24px;
+    background: rgba(248,113,113,0.08);
+    border-bottom: 1px solid rgba(248,113,113,0.25);
+    display: flex; gap: 16px; align-items: center;
+  }
+  .summary-times { font-family: 'Courier New', monospace; font-size: 0.85rem; }
+  .summary-times .lbl { opacity: 0.65; margin-right: 4px; }
+
+  .ai-hint-row {
+    padding: 12px 24px;
+    background: rgba(59,130,246,0.10);
+    border-bottom: 1px solid rgba(59,130,246,0.25);
+    display: flex; gap: 12px; align-items: center;
+  }
+  .ai-icon-box {
+    width: 32px; height: 32px;
+    background: rgba(59,130,246,0.25);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .ai-text-block { line-height: 1.3; }
+  .ai-label { font-size: 0.7rem; font-weight: 800; color: #93C5FD;
+              text-transform: uppercase; letter-spacing: 0.06em; }
+  .ai-suggestion { font-size: 0.85rem; color: #DBEAFE; margin-top: 2px; }
+
+  .modal-body { padding: 16px 24px; }
+  .body-label { font-size: 0.72rem; font-weight: 800; color: #C084FC;
+                text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .reason-categories { display: flex; flex-direction: column; gap: 12px; }
+  .category {
+    background: rgba(45,27,78,0.6);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: 10px;
+    padding: 11px 13px;
+  }
+  .cat-name {
+    font-size: 0.7rem; font-weight: 800; color: #F472B6;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px;
+  }
+  .reason-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .reason-card {
+    padding: 9px 11px; border-radius: 8px;
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.3);
+    cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .reason-card:hover { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.6); }
+  .reason-card.selected {
+    background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(244,114,182,0.3));
+    border-color: #F472B6; border-width: 2px;
+    box-shadow: 0 4px 12px rgba(244,114,182,0.3);
+  }
+  .reason-label { font-size: 0.82rem; font-weight: 700; color: #f5f3ff; line-height: 1.2; }
+  .reason-hint { font-size: 0.66rem; color: #A78BFA; line-height: 1.3; }
+  .reason-needs-input::after { content: " ✏️"; font-size: 0.7rem; }
+  .extra-input-area {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: rgba(244,114,182,0.08);
+    border: 1px solid rgba(244,114,182,0.4);
+    border-radius: 10px;
+  }
+  .extra-input-label {
+    font-size: 0.75rem; font-weight: 700; color: #F472B6;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+  }
+  .extra-input-field {
+    width: 100%; padding: 9px 12px;
+    background: rgba(15,7,23,0.5);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 6px;
+    color: #f5f3ff; font-size: 0.88rem;
+    font-family: inherit;
+  }
+  .extra-input-field::placeholder { color: rgba(167,139,250,0.5); }
+  .extra-input-hint { font-size: 0.7rem; color: #A78BFA; margin-top: 5px; }
+  .live-preview {
+    margin-top: 10px;
+    padding: 9px 12px;
+    background: rgba(34,197,94,0.08);
+    border-left: 3px solid #34D399;
+    border-radius: 6px;
+    font-size: 0.76rem; color: #BBF7D0;
+  }
+  .modal-footer {
+    padding: 12px 24px;
+    border-top: 1px solid rgba(167,139,250,0.2);
+    display: flex; gap: 10px; justify-content: flex-end;
+    align-items: center;
+  }
+  .footer-existing-resolution {
+    margin-right: auto; font-size: 0.78rem; color: #BBF7D0;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn { padding: 9px 18px; border-radius: 8px; font-size: 0.88rem;
+         font-weight: 700; border: none; cursor: pointer; }
+  .btn-primary { background: linear-gradient(135deg, #34D399, #10B981); color: white;
+                  box-shadow: 0 4px 12px rgba(52,211,153,0.3); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: rgba(167,139,250,0.15); color: #DDD6FE; }
+  .btn-danger { background: rgba(248,113,113,0.15); color: #FCA5A5;
+                border: 1px solid rgba(248,113,113,0.3); }
+
+  /* Annotation banners */
+  .annot {
+    margin-top: 18px;
+    padding: 12px 16px;
+    background: rgba(124,58,237,0.08);
+    border-left: 3px solid #7C3AED;
+    border-radius: 4px;
+    font-size: 0.83rem; color: #DDD6FE; line-height: 1.55;
+    max-width: 1100px;
+  }
+  .annot strong { color: #f5f3ff; }
+  .annot ul { padding-left: 20px; margin-top: 6px; }
+  .annot li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Issues — List with Status + Resolve Modal</h1>
+<p class="subtitle">
+  Final design per feedback: AI recommendation pindah dari list ke dalam modal.
+  List sekarang punya status badge "Pending" (atas) atau "Resolved" (bawah),
+  sehingga user bisa trace history resolve issue.
+</p>
+
+<!-- =============================== SECTION 1: NEW LIST =============================== -->
+<h2>1️⃣ Issue List — Dengan Status Badge + Sorting</h2>
+<p class="section-intro">
+  Pending issues di atas (yang masih perlu di-handle), Resolved issues di bawah (sudah ditangani).
+  Each row punya status badge yang jelas. Yang Resolved sedikit di-dim (opacity 78%) supaya secara
+  visual user tau yang utama itu Pending. Klik issue Resolved → tetap bisa buka modal untuk re-edit.
+</p>
+
+<div class="stage" style="height: 820px;">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo-block">
+      <div class="icon-hex">J</div>
+      <div>
+        <div class="wordmark-brand">Josaphat Tech</div>
+        <div class="wordmark-tagline">HR Manager</div>
+      </div>
+    </div>
+    <div class="nav-section">Workflow</div>
+    <div class="nav-item">📥 Import Data</div>
+    <div class="nav-item active">⚠ Issues</div>
+    <div class="nav-item">📊 Dashboard</div>
+    <div class="nav-section">Database</div>
+    <div class="nav-item">🗃 Main Database</div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="page-header-row">
+      <div>
+        <div class="page-title">Issues</div>
+        <div class="page-subtitle">21 total · 12 pending · 9 resolved · period 30 Mar – 05 Apr 2026</div>
+      </div>
+      <div class="period-nav">
+        <span class="chev">◀</span>
+        <span style="font-weight: 600;">30 Mar – 05 Apr 2026</span>
+        <span class="chev">▶</span>
+      </div>
+    </div>
+
+    <div class="issue-list">
+      <!-- ===== PENDING ===== -->
+      <div class="list-divider">
+        <span>⚠️ Belum Ditangani</span>
+        <span class="divider-count divider-pending">12</span>
+        <span class="divider-line"></span>
+      </div>
+
+      <div class="issue unresolved">
+        <div>
+          <div class="issue-name">ESA</div>
+          <div class="issue-date">2026-04-01 · Rabu</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution-empty">— belum ditangani —</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-pending">⚠ Pending</div>
+      </div>
+
+      <div class="issue unresolved">
+        <div>
+          <div class="issue-name">LIA</div>
+          <div class="issue-date">2026-04-01 · Rabu</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution-empty">— belum ditangani —</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-pending">⚠ Pending</div>
+      </div>
+
+      <div class="issue unresolved">
+        <div>
+          <div class="issue-name">RYAN</div>
+          <div class="issue-date">2026-04-01 · Rabu</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-time">08:58</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution-empty">— belum ditangani —</div>
+        <div class="issue-case-badge badge-lupa-mild">Lupa Pulang</div>
+        <div class="issue-status-badge status-pending">⚠ Pending</div>
+      </div>
+
+      <div class="issue unresolved">
+        <div>
+          <div class="issue-name">SATRIO</div>
+          <div class="issue-date">2026-04-01 · Rabu</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution-empty">— belum ditangani —</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-pending">⚠ Pending</div>
+      </div>
+
+      <div class="issue unresolved">
+        <div>
+          <div class="issue-name">TOMBAK</div>
+          <div class="issue-date">2026-04-01 · Rabu</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-time">13:41</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-time">15:54</span></div>
+        </div>
+        <div class="issue-resolution-empty">— belum ditangani —</div>
+        <div class="issue-case-badge badge-pulang">Pulang Cepat</div>
+        <div class="issue-status-badge status-pending">⚠ Pending</div>
+      </div>
+
+      <!-- ===== RESOLVED ===== -->
+      <div class="list-divider" style="margin-top: 8px;">
+        <span>✅ Sudah Ditangani</span>
+        <span class="divider-count divider-resolved">9</span>
+        <span class="divider-line"></span>
+      </div>
+
+      <div class="issue resolved">
+        <div>
+          <div class="issue-name">ANDIKA</div>
+          <div class="issue-date">2026-04-02 · Kamis</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution">✓ Lapangan ke PT XYZ Surabaya</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-resolved">✓ Resolved</div>
+      </div>
+
+      <div class="issue resolved">
+        <div>
+          <div class="issue-name">BUDI</div>
+          <div class="issue-date">2026-04-02 · Kamis</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution">✓ Izin Sakit</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-resolved">✓ Resolved</div>
+      </div>
+
+      <div class="issue resolved">
+        <div>
+          <div class="issue-name">CITRA</div>
+          <div class="issue-date">2026-04-03 · Jumat</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution">✓ Cuti</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-resolved">✓ Resolved</div>
+      </div>
+
+      <div class="issue resolved">
+        <div>
+          <div class="issue-name">DENI</div>
+          <div class="issue-date">2026-04-03 · Jumat</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-time">08:32</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution">✓ Lupa Absen (terhitung +16 mnt)</div>
+        <div class="issue-case-badge badge-lupa-mild">Lupa Pulang</div>
+        <div class="issue-status-badge status-resolved">✓ Resolved</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="annot">
+  <strong>Karakteristik List:</strong>
+  <ul>
+    <li>Header subtitle nunjukkin total counts: "21 total · 12 pending · 9 resolved"</li>
+    <li>Section divider antara Pending dan Resolved + count chip di sebelah label</li>
+    <li>Pending row: AKSEN MERAH (border-left + bg merah-soft) → urgensi visual jelas</li>
+    <li>Resolved row: AKSEN HIJAU + dim 78% → terasa "selesai", tapi tetap clickable buat re-edit</li>
+    <li>Resolved row tampilin reason text (✓ Cuti, ✓ Lapangan ke X) → user tau apa yang di-resolve tanpa buka modal</li>
+    <li>Pending row di kolom resolution: "— belum ditangani —" (placeholder samar)</li>
+    <li><strong>AI hint dihilangkan dari list</strong> — bersih, fokus ke status</li>
+  </ul>
+</div>
+
+<!-- =============================== SECTION 2: MODAL =============================== -->
+<h2>2️⃣ Resolve Issue Modal — Dengan AI Recommendation</h2>
+<p class="section-intro">
+  AI rec sekarang ada di sini, di banner biru di atas reason categories. Logic rest sama
+  seperti A1 di mockup 09: kategori reason, extra input prominent, live preview, save button
+  disabled sampai input lengkap.
+</p>
+
+<div class="stage" style="height: 880px;">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo-block">
+      <div class="icon-hex">J</div>
+      <div>
+        <div class="wordmark-brand">Josaphat Tech</div>
+        <div class="wordmark-tagline">HR Manager</div>
+      </div>
+    </div>
+    <div class="nav-section">Workflow</div>
+    <div class="nav-item">📥 Import Data</div>
+    <div class="nav-item active">⚠ Issues</div>
+    <div class="nav-item">📊 Dashboard</div>
+  </div>
+
+  <!-- Main with list peeking + modal on top -->
+  <div class="main">
+    <div class="page-header-row">
+      <div>
+        <div class="page-title">Issues</div>
+        <div class="page-subtitle">21 total · 12 pending · 9 resolved</div>
+      </div>
+    </div>
+
+    <!-- A few issues visible behind modal (just for context) -->
+    <div class="issue-list">
+      <div class="list-divider">
+        <span>⚠️ Belum Ditangani</span>
+        <span class="divider-count divider-pending">12</span>
+        <span class="divider-line"></span>
+      </div>
+      <div class="issue unresolved selected">
+        <div>
+          <div class="issue-name">ESA</div>
+          <div class="issue-date">2026-04-01 · Rabu</div>
+        </div>
+        <div class="issue-times">
+          <div><span class="lbl">In:</span> <span class="v-empty">kosong</span></div>
+          <div><span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        </div>
+        <div class="issue-resolution-empty">— belum ditangani —</div>
+        <div class="issue-case-badge badge-absent">Tidak Hadir</div>
+        <div class="issue-status-badge status-pending">⚠ Pending</div>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Resolve Issue</div>
+            <div class="modal-meta">ESA · 2026-04-01 (Rabu) · Tidak Hadir</div>
+          </div>
+          <div class="modal-close">✕</div>
+        </div>
+
+        <!-- Issue summary -->
+        <div class="modal-issue-summary">
+          <div class="summary-times">
+            <span class="lbl">In:</span> <span style="color: #F87171;">kosong</span>
+            &nbsp;&nbsp;<span class="lbl">Out:</span> <span style="color: #F87171;">kosong</span>
+          </div>
+        </div>
+
+        <!-- AI Recommendation banner (NEW position) -->
+        <div class="ai-hint-row">
+          <div class="ai-icon-box">🤖</div>
+          <div class="ai-text-block">
+            <div class="ai-label">AI menyarankan</div>
+            <div class="ai-suggestion">Kemungkinan: <strong>Tidak Hadir</strong>, <strong>Cuti</strong>, atau <strong>Izin Sakit</strong>?</div>
+          </div>
+        </div>
+
+        <div class="modal-body">
+          <div class="body-label">Pilih Alasan</div>
+          <div class="reason-categories">
+            <div class="category">
+              <div class="cat-name">Tugas (di luar kantor)</div>
+              <div class="reason-grid">
+                <div class="reason-card selected reason-needs-input">
+                  <div class="reason-label">Tugas Lapangan</div>
+                  <div class="reason-hint">Field/site visit</div>
+                </div>
+                <div class="reason-card reason-needs-input">
+                  <div class="reason-label">Tugas Paparan</div>
+                  <div class="reason-hint">Presentasi luar</div>
+                </div>
+              </div>
+            </div>
+            <div class="category">
+              <div class="cat-name">Cuti / Sakit / Izin</div>
+              <div class="reason-grid">
+                <div class="reason-card"><div class="reason-label">Izin Sakit</div></div>
+                <div class="reason-card"><div class="reason-label">Cuti</div></div>
+                <div class="reason-card reason-needs-input"><div class="reason-label">Izin Pagi</div></div>
+                <div class="reason-card reason-needs-input"><div class="reason-label">Pulang Lebih Awal</div></div>
+              </div>
+            </div>
+            <div class="category">
+              <div class="cat-name">Telat / Lupa Absen</div>
+              <div class="reason-grid">
+                <div class="reason-card reason-needs-input"><div class="reason-label">Masuk Terlambat (Pekerjaan)</div></div>
+                <div class="reason-card"><div class="reason-label">Terlambat (personal)</div></div>
+                <div class="reason-card"><div class="reason-label">Lupa Absen</div><div class="reason-hint">+16 mnt penalty</div></div>
+              </div>
+            </div>
+            <div class="category">
+              <div class="cat-name">Lain</div>
+              <div class="reason-grid">
+                <div class="reason-card"><div class="reason-label">Belum Ada Kabar</div></div>
+                <div class="reason-card"><div class="reason-label">Tidak Hadir</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extra input (visible because Tugas Lapangan selected) -->
+          <div class="extra-input-area">
+            <div class="extra-input-label">📍 Lokasi <span style="color: #F87171;">*</span></div>
+            <input class="extra-input-field" placeholder="Misal: Kantor Klien Surabaya, Site PT XYZ, ..." value="">
+            <div class="extra-input-hint">Field wajib diisi sebelum Save.</div>
+          </div>
+
+          <div class="live-preview">
+            <strong>Preview di Main DB:</strong> <em>Lapangan ke ____</em>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary" disabled>Save Resolution</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="annot">
+  <strong>Modal — apa yang berubah dari mockup 09:</strong>
+  <ul>
+    <li><strong>AI banner</strong> — pindah ke modal, tampil prominent dengan ikon biru di atas reason categories</li>
+    <li>Saat user buka issue YANG SUDAH RESOLVED → modal muncul dengan reason card-nya pre-selected, plus extra input pre-filled. Footer ada tombol "🗑 Delete Resolution" (kanan) buat unresolve kalau salah pilih</li>
+    <li>Save button label: "Save Resolution" (untuk pending) atau "Update Resolution" (untuk re-edit)</li>
+  </ul>
+</div>
+
+<div class="annot" style="background: rgba(244,114,182,0.08); border-left-color: #F472B6;">
+  <strong>Belum kebahas, mau dibahas?</strong>
+  <ul>
+    <li>Status badge label: "Pending" / "Resolved" (English) atau "Belum Ditangani" / "Sudah Ditangani" (Indonesian)? Saya pakai English-pendek di mockup karena ringkas, tapi siap diubah</li>
+    <li>Re-edit resolved issue: ada tombol Delete Resolution di modal untuk un-resolve? Atau cukup ganti reason saja?</li>
+    <li>Sub-sort dalam Pending section: by date asc, atau by name? (saat ini date asc)</li>
+    <li>Default state saat buka Issues page: collapse Resolved section secara default? (cuma show count, klik untuk expand)</li>
+  </ul>
+</div>
+
+</body>
+</html>

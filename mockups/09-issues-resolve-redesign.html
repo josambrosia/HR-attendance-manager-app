@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Issues Resolve Panel — Redesign Variants</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+    background: #0f0717;
+    color: #e9d5ff;
+    padding: 32px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 1.6rem; font-weight: 800; color: #f5f3ff; margin-bottom: 6px; }
+  h2 { font-size: 1.1rem; font-weight: 800; color: #C084FC; margin-top: 36px; margin-bottom: 8px; letter-spacing: 0.02em; }
+  .subtitle { color: #A78BFA; font-size: 0.9rem; margin-bottom: 24px; max-width: 800px; line-height: 1.5; }
+  .section-intro { color: #DDD6FE; font-size: 0.85rem; margin: 8px 0 16px; max-width: 900px; line-height: 1.5; }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px;
+          background: rgba(244,114,182,0.2); color: #F472B6; font-size: 0.7rem;
+          font-weight: 700; margin-left: 8px; vertical-align: 2px; }
+
+  /* ============ APP STAGE ============ */
+  .stage {
+    position: relative;
+    background: #1a0b2e;
+    border: 1px solid #4c1d95;
+    border-radius: 12px;
+    overflow: hidden;
+    height: 760px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: #2d1b4e;
+    border-right: 1px solid #4c1d95;
+    padding: 16px 12px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .logo-block { display: flex; align-items: center; gap: 10px; padding: 8px; }
+  .icon-hex {
+    width: 36px; height: 40px;
+    background: linear-gradient(135deg, #7C3AED, #F472B6);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    color: white; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 16px;
+  }
+  .wordmark-brand { font-weight: 800; font-size: 0.85rem; color: #f5f3ff; }
+  .wordmark-tagline { font-weight: 500; font-size: 0.65rem; color: #C084FC; }
+  .nav-section { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
+                  color: #A78BFA; padding: 8px 10px 4px; font-weight: 700; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px;
+    border-radius: 7px; font-size: 0.82rem; color: #DDD6FE; cursor: pointer;
+  }
+  .nav-item.active {
+    background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(244,114,182,0.2));
+    color: #f5f3ff; font-weight: 600;
+  }
+
+  /* Main content */
+  .main { padding: 20px 24px; overflow: hidden; position: relative; }
+  .page-title { font-size: 1.5rem; font-weight: 800; color: #f5f3ff; }
+  .period-text { font-size: 0.75rem; opacity: 0.7; margin-top: 4px; }
+  .period-nav { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #DDD6FE; }
+  .chev { color: #A78BFA; cursor: pointer; padding: 4px; font-size: 1.2rem; }
+
+  /* Issue rows (compact) */
+  .issue-list { display: flex; flex-direction: column; gap: 4px; margin-top: 14px; max-height: 600px; overflow: auto; }
+  .issue {
+    padding: 8px 12px; border-radius: 6px;
+    background: rgba(248,113,113,0.1);
+    border-left: 3px solid #F87171;
+    display: flex; gap: 10px; align-items: center; font-size: 0.8rem; cursor: pointer;
+  }
+  .issue.selected { background: rgba(248,113,113,0.25); }
+  .issue-name { font-weight: 700; color: #f5f3ff; flex: 0 0 110px; font-size: 0.83rem; }
+  .issue-date { color: #C084FC; font-size: 0.7rem; }
+  .issue-times { font-family: 'Courier New', monospace; font-size: 0.75rem; flex: 1; }
+  .issue-times .lbl { opacity: 0.6; }
+  .issue-times .v-empty { color: #F87171; }
+  .issue-times .v-time { color: #34D399; }
+  .issue-badge {
+    padding: 3px 10px; border-radius: 8px; font-size: 0.7rem;
+    font-weight: 700; color: white;
+  }
+  .badge-absent { background: #F87171; }
+  .badge-pulang { background: #C084FC; }
+  .badge-lupa { background: #FCD34D; color: #2d1b4e; }
+
+  /* ============ A1: MODAL DIALOG ============ */
+  .modal-overlay-a {
+    position: absolute; inset: 0;
+    background: rgba(15,7,23,0.75);
+    backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .modal-card {
+    background: #2d1b4e;
+    border: 2px solid #7C3AED;
+    border-radius: 16px;
+    width: 720px;
+    max-height: 92%;
+    overflow: auto;
+    box-shadow: 0 20px 60px rgba(124,58,237,0.4);
+    display: flex; flex-direction: column;
+  }
+  .modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(167,139,250,0.2);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .modal-title { font-size: 1.3rem; font-weight: 800; color: #f5f3ff; }
+  .modal-meta { font-size: 0.85rem; color: #C084FC; }
+  .modal-close {
+    margin-left: auto; padding: 4px 10px; border-radius: 6px;
+    background: rgba(167,139,250,0.15); color: #DDD6FE;
+    font-size: 0.85rem; cursor: pointer;
+  }
+  .modal-issue-summary {
+    padding: 14px 24px;
+    background: rgba(248,113,113,0.08);
+    border-bottom: 1px solid rgba(248,113,113,0.25);
+    display: flex; gap: 16px; align-items: center;
+  }
+  .summary-times { font-family: 'Courier New', monospace; font-size: 0.85rem; }
+  .summary-times .lbl { opacity: 0.65; margin-right: 4px; }
+  .ai-hint {
+    margin-left: auto; padding: 6px 12px; border-radius: 6px;
+    background: rgba(59,130,246,0.18); color: #93C5FD;
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .modal-body { padding: 18px 24px; }
+  .body-label { font-size: 0.75rem; font-weight: 700; color: #C084FC;
+                text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .reason-categories { display: flex; flex-direction: column; gap: 14px; }
+  .category {
+    background: rgba(45,27,78,0.6);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .cat-name {
+    font-size: 0.7rem; font-weight: 800; color: #F472B6;
+    text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+  }
+  .reason-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .reason-card {
+    padding: 10px 12px; border-radius: 8px;
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.3);
+    cursor: pointer; transition: all 0.15s;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .reason-card:hover { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.6); }
+  .reason-card.selected {
+    background: linear-gradient(135deg, rgba(124,58,237,0.4), rgba(244,114,182,0.3));
+    border-color: #F472B6; border-width: 2px;
+    box-shadow: 0 4px 12px rgba(244,114,182,0.3);
+  }
+  .reason-label { font-size: 0.85rem; font-weight: 700; color: #f5f3ff; line-height: 1.2; }
+  .reason-hint { font-size: 0.68rem; color: #A78BFA; line-height: 1.3; }
+  .reason-needs-input::after {
+    content: " ✏️"; font-size: 0.7rem;
+  }
+  .extra-input-area {
+    margin-top: 14px;
+    padding: 14px;
+    background: rgba(244,114,182,0.08);
+    border: 1px solid rgba(244,114,182,0.4);
+    border-radius: 10px;
+  }
+  .extra-input-label {
+    font-size: 0.75rem; font-weight: 700; color: #F472B6;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+  }
+  .extra-input-field {
+    width: 100%; padding: 10px 12px;
+    background: rgba(15,7,23,0.5);
+    border: 1px solid rgba(167,139,250,0.4);
+    border-radius: 6px;
+    color: #f5f3ff; font-size: 0.9rem;
+    font-family: inherit;
+  }
+  .extra-input-field::placeholder { color: rgba(167,139,250,0.5); }
+  .extra-input-hint { font-size: 0.7rem; color: #A78BFA; margin-top: 6px; }
+
+  .modal-footer {
+    padding: 14px 24px;
+    border-top: 1px solid rgba(167,139,250,0.2);
+    display: flex; gap: 10px; justify-content: flex-end;
+  }
+  .btn { padding: 9px 18px; border-radius: 8px; font-size: 0.88rem;
+         font-weight: 700; border: none; cursor: pointer; }
+  .btn-primary { background: linear-gradient(135deg, #34D399, #10B981); color: white;
+                  box-shadow: 0 4px 12px rgba(52,211,153,0.3); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: rgba(167,139,250,0.15); color: #DDD6FE; }
+
+  .live-preview {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(34,197,94,0.08);
+    border-left: 3px solid #34D399;
+    border-radius: 6px;
+    font-size: 0.78rem; color: #BBF7D0;
+  }
+  .live-preview .lbl { font-weight: 700; opacity: 0.85; margin-right: 4px; }
+
+  /* ============ A2: SPLIT PANEL ============ */
+  .split-stage { grid-template-columns: 220px 1fr 1fr; }
+  .resolve-side {
+    background: #2d1b4e;
+    border-left: 1px solid #4c1d95;
+    padding: 18px 22px;
+    overflow: auto;
+  }
+  .resolve-side h3 { font-size: 1.2rem; font-weight: 800; color: #f5f3ff; margin-bottom: 4px; }
+  .resolve-side .meta { font-size: 0.78rem; color: #C084FC; margin-bottom: 14px; }
+  .resolve-side .reason-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Annotation banner */
+  .annot {
+    margin-top: 18px;
+    padding: 12px 16px;
+    background: rgba(124,58,237,0.08);
+    border-left: 3px solid #7C3AED;
+    border-radius: 4px;
+    font-size: 0.83rem; color: #DDD6FE; line-height: 1.55;
+  }
+  .annot strong { color: #f5f3ff; }
+  .annot ul { padding-left: 20px; margin-top: 6px; }
+  .annot li { margin-bottom: 4px; }
+
+  /* Current state callout */
+  .current-callout {
+    margin-bottom: 18px;
+    padding: 14px 18px;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.4);
+    border-radius: 10px;
+    font-size: 0.85rem;
+  }
+  .current-callout strong { color: #F87171; }
+</style>
+</head>
+<body>
+
+<h1>Issues — Resolve Panel Redesign</h1>
+<p class="subtitle">
+  Panel saat ini cuma 420px (kanan), tombol-tombol pilihan terpotong, dan extra input field
+  (Lokasi / Alasan detail) hampir tidak terlihat. Padahal "resolve" ini core action user.
+  Dua varian di bawah membuat panel jauh lebih dominant + grouping reason supaya gampang dipilih.
+</p>
+
+<!-- Current state recap -->
+<div class="current-callout">
+  <strong>Masalah saat ini:</strong> panel resolve kanan 420px → button label terpotong
+  ("Tugas Lapangan", "Pulang Lebih Awal" cut), extra input field tidak prominent atau hilang
+  visually, user merasa core action ditempatkan di tempat sempit.
+</div>
+
+<!-- =============================== A1: MODAL DIALOG =============================== -->
+<h2>Variant A1 — Modal Dialog <span class="pill">Recommended</span></h2>
+<p class="section-intro">
+  Klik issue → modal terpusat (720px) muncul dengan dim overlay. List masih ada di belakang
+  (transparent), tapi fokus user pure ke resolve. Reason cards di-group jadi 4 kategori
+  (Tugas, Izin/Cuti, Telat/Lupa, Lain). Card yang butuh input tambahan ditandai ✏️.
+  Begitu di-pilih, field input langsung muncul prominent dengan border accent.
+</p>
+
+<div class="stage">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo-block">
+      <div class="icon-hex">J</div>
+      <div>
+        <div class="wordmark-brand">Josaphat Tech</div>
+        <div class="wordmark-tagline">HR Manager</div>
+      </div>
+    </div>
+    <div class="nav-section">Workflow</div>
+    <div class="nav-item">📥 Import Data</div>
+    <div class="nav-item active">⚠ Issues</div>
+    <div class="nav-item">📊 Dashboard</div>
+    <div class="nav-section">Database</div>
+    <div class="nav-item">🗃 Main Database</div>
+  </div>
+
+  <!-- Main content (with issues list visible behind modal) -->
+  <div class="main">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+      <div>
+        <div class="page-title">Issues</div>
+        <div class="period-text">Period: 2026-04-01 → 2026-04-07</div>
+      </div>
+      <div class="period-nav">
+        <span class="chev">◀</span>
+        <span>30 Mar – 05 Apr 2026</span>
+        <span class="chev">▶</span>
+      </div>
+    </div>
+    <div class="issue-list">
+      <div class="issue selected"><div class="issue-name">ESA</div>
+        <div class="issue-date">2026-04-01 · Rabu</div>
+        <div class="issue-times"><span class="lbl">In:</span> <span class="v-empty">kosong</span> · <span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        <div class="issue-badge badge-absent">Tidak Hadir</div>
+      </div>
+      <div class="issue"><div class="issue-name">LIA</div>
+        <div class="issue-date">2026-04-01 · Rabu</div>
+        <div class="issue-times"><span class="lbl">In:</span> <span class="v-empty">kosong</span> · <span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        <div class="issue-badge badge-absent">Tidak Hadir</div>
+      </div>
+      <div class="issue"><div class="issue-name">RYAN</div>
+        <div class="issue-date">2026-04-01 · Rabu</div>
+        <div class="issue-times"><span class="lbl">In:</span> <span class="v-time">08:58</span> · <span class="lbl">Out:</span> <span class="v-empty">kosong</span></div>
+        <div class="issue-badge badge-lupa">Lupa Pulang</div>
+      </div>
+      <div class="issue"><div class="issue-name">TOMBAK</div>
+        <div class="issue-date">2026-04-01 · Rabu</div>
+        <div class="issue-times"><span class="lbl">In:</span> <span class="v-time">13:41</span> · <span class="lbl">Out:</span> <span class="v-time">15:54</span></div>
+        <div class="issue-badge badge-pulang">Pulang Cepat</div>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay-a">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Resolve Issue</div>
+            <div class="modal-meta">ESA · 2026-04-01 (Rabu)</div>
+          </div>
+          <div class="modal-close">✕</div>
+        </div>
+
+        <div class="modal-issue-summary">
+          <div class="summary-times">
+            <span class="lbl">In:</span> <span style="color: #F87171;">kosong</span>
+            &nbsp;&nbsp;<span class="lbl">Out:</span> <span style="color: #F87171;">kosong</span>
+          </div>
+          <div class="ai-hint">🤖 AI · Tidak Hadir / Cuti / Izin Sakit?</div>
+        </div>
+
+        <div class="modal-body">
+          <div class="body-label">Pilih Alasan</div>
+
+          <div class="reason-categories">
+            <div class="category">
+              <div class="cat-name">Tugas (di luar kantor)</div>
+              <div class="reason-grid">
+                <div class="reason-card selected reason-needs-input">
+                  <div class="reason-label">Tugas Lapangan</div>
+                  <div class="reason-hint">Field/site visit</div>
+                </div>
+                <div class="reason-card reason-needs-input">
+                  <div class="reason-label">Tugas Paparan</div>
+                  <div class="reason-hint">Presentasi luar</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="category">
+              <div class="cat-name">Cuti / Sakit / Izin</div>
+              <div class="reason-grid">
+                <div class="reason-card">
+                  <div class="reason-label">Izin Sakit</div>
+                  <div class="reason-hint">Sakit (tanpa input)</div>
+                </div>
+                <div class="reason-card">
+                  <div class="reason-label">Cuti</div>
+                  <div class="reason-hint">Cuti tahunan / besar</div>
+                </div>
+                <div class="reason-card reason-needs-input">
+                  <div class="reason-label">Izin Pagi</div>
+                  <div class="reason-hint">Datang siang, ada urusan</div>
+                </div>
+                <div class="reason-card reason-needs-input">
+                  <div class="reason-label">Pulang Lebih Awal</div>
+                  <div class="reason-hint">Keluar dini, ada urusan</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="category">
+              <div class="cat-name">Telat / Lupa Absen</div>
+              <div class="reason-grid">
+                <div class="reason-card reason-needs-input">
+                  <div class="reason-label">Masuk Terlambat (Pekerjaan)</div>
+                  <div class="reason-hint">Telat krn meeting / urusan kerja</div>
+                </div>
+                <div class="reason-card">
+                  <div class="reason-label">Terlambat (personal)</div>
+                  <div class="reason-hint">Telat, tanpa alasan kerja</div>
+                </div>
+                <div class="reason-card">
+                  <div class="reason-label">Lupa Absen</div>
+                  <div class="reason-hint">+16 mnt penalty otomatis</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="category">
+              <div class="cat-name">Lain</div>
+              <div class="reason-grid">
+                <div class="reason-card">
+                  <div class="reason-label">Belum Ada Kabar</div>
+                  <div class="reason-hint">Sementara, blm tau alasan</div>
+                </div>
+                <div class="reason-card">
+                  <div class="reason-label">Tidak Hadir</div>
+                  <div class="reason-hint">Resmi tidak hadir, no follow-up</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extra input — appears AFTER selecting "Tugas Lapangan" -->
+          <div class="extra-input-area">
+            <div class="extra-input-label">📍 Lokasi <span style="color: #F87171;">*</span></div>
+            <input class="extra-input-field" placeholder="Misal: Kantor Klien Surabaya, Site PT XYZ, ..." value="">
+            <div class="extra-input-hint">Akan tampil di Sheets sebagai: "Lapangan ke {lokasi}"</div>
+          </div>
+
+          <!-- Live preview of how it'll render -->
+          <div class="live-preview">
+            <span class="lbl">Preview di Main DB:</span> <em>Lapangan ke ____</em>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary" disabled>Save Resolution</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="annot">
+  <strong>Karakteristik A1 (Modal):</strong>
+  <ul>
+    <li>Modal 720px lebar — semua label reason kebaca utuh, tidak terpotong</li>
+    <li>4 kategori grouping → user lebih cepat scan ke kategori yang tepat</li>
+    <li>Card yang butuh input ditandai ✏️; saat di-pilih, field muncul dengan accent border merah-pink</li>
+    <li>Live preview "akan tampil di Main DB sebagai: ..." → user yakin hasilnya benar sebelum Save</li>
+    <li>Save button disabled sampai (a) reason di-pilih DAN (b) extra input terisi (kalau perlu)</li>
+    <li>Trade-off: hide list sementara saat resolve. Tapi user fokusnya satu issue saja.</li>
+  </ul>
+</div>
+
+<!-- =============================== A2: SPLIT PANEL =============================== -->
+<h2>Variant A2 — Expanded Split Panel (50/50)</h2>
+<p class="section-intro">
+  Klik issue → list shrink ke 50%, resolve panel jadi 50%. Reason cards susun 2 kolom
+  (lebih sempit dari modal tapi tetap >> dari 420px panel sekarang). User bisa lihat
+  daftar issue lain saat resolve.
+</p>
+
+<div class="stage split-stage">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo-block">
+      <div class="icon-hex">J</div>
+      <div>
+        <div class="wordmark-brand">Josaphat Tech</div>
+        <div class="wordmark-tagline">HR Manager</div>
+      </div>
+    </div>
+    <div class="nav-section">Workflow</div>
+    <div class="nav-item">📥 Import Data</div>
+    <div class="nav-item active">⚠ Issues</div>
+    <div class="nav-item">📊 Dashboard</div>
+  </div>
+
+  <!-- Issues list (shrunk to 50%) -->
+  <div class="main" style="border-right: 1px solid #4c1d95;">
+    <div class="page-title">Issues</div>
+    <div class="period-text">2026-04-01 → 2026-04-07 · 21 pending</div>
+    <div class="issue-list">
+      <div class="issue selected"><div class="issue-name">ESA</div>
+        <div class="issue-date">2026-04-01</div>
+        <div class="issue-badge badge-absent">Tidak Hadir</div>
+      </div>
+      <div class="issue"><div class="issue-name">LIA</div>
+        <div class="issue-date">2026-04-01</div>
+        <div class="issue-badge badge-absent">Tidak Hadir</div>
+      </div>
+      <div class="issue"><div class="issue-name">RYAN</div>
+        <div class="issue-date">2026-04-01</div>
+        <div class="issue-badge badge-lupa">Lupa Pulang</div>
+      </div>
+      <div class="issue"><div class="issue-name">SATRIO</div>
+        <div class="issue-date">2026-04-01</div>
+        <div class="issue-badge badge-absent">Tidak Hadir</div>
+      </div>
+      <div class="issue"><div class="issue-name">SUFFI</div>
+        <div class="issue-date">2026-04-01</div>
+        <div class="issue-badge badge-absent">Tidak Hadir</div>
+      </div>
+      <div class="issue"><div class="issue-name">TOMBAK</div>
+        <div class="issue-date">2026-04-01</div>
+        <div class="issue-badge badge-pulang">Pulang Cepat</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resolve panel (50%) -->
+  <div class="resolve-side">
+    <h3>Resolve Issue</h3>
+    <div class="meta">ESA · 2026-04-01 (Rabu) · Tidak Hadir</div>
+
+    <div class="modal-issue-summary" style="margin-bottom: 14px; border-radius: 8px; border: 1px solid rgba(248,113,113,0.4);">
+      <div class="summary-times">
+        <span class="lbl">In:</span> <span style="color: #F87171;">kosong</span>
+        &nbsp;<span class="lbl">Out:</span> <span style="color: #F87171;">kosong</span>
+      </div>
+      <div class="ai-hint">🤖 AI · Tidak Hadir / Cuti / Izin Sakit?</div>
+    </div>
+
+    <div class="body-label">Pilih Alasan</div>
+    <div class="reason-categories">
+      <div class="category">
+        <div class="cat-name">Tugas (di luar kantor)</div>
+        <div class="reason-grid">
+          <div class="reason-card selected reason-needs-input">
+            <div class="reason-label">Tugas Lapangan</div>
+            <div class="reason-hint">Field/site visit</div>
+          </div>
+          <div class="reason-card reason-needs-input">
+            <div class="reason-label">Tugas Paparan</div>
+            <div class="reason-hint">Presentasi luar</div>
+          </div>
+        </div>
+      </div>
+      <div class="category">
+        <div class="cat-name">Cuti / Sakit / Izin</div>
+        <div class="reason-grid">
+          <div class="reason-card"><div class="reason-label">Izin Sakit</div></div>
+          <div class="reason-card"><div class="reason-label">Cuti</div></div>
+          <div class="reason-card reason-needs-input"><div class="reason-label">Izin Pagi</div></div>
+          <div class="reason-card reason-needs-input"><div class="reason-label">Pulang Lebih Awal</div></div>
+        </div>
+      </div>
+      <div class="category">
+        <div class="cat-name">Telat / Lupa Absen</div>
+        <div class="reason-grid">
+          <div class="reason-card reason-needs-input"><div class="reason-label">Masuk Terlambat (Pekerjaan)</div></div>
+          <div class="reason-card"><div class="reason-label">Terlambat (personal)</div></div>
+          <div class="reason-card"><div class="reason-label">Lupa Absen</div><div class="reason-hint">+16 mnt</div></div>
+        </div>
+      </div>
+      <div class="category">
+        <div class="cat-name">Lain</div>
+        <div class="reason-grid">
+          <div class="reason-card"><div class="reason-label">Belum Ada Kabar</div></div>
+          <div class="reason-card"><div class="reason-label">Tidak Hadir</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="extra-input-area">
+      <div class="extra-input-label">📍 Lokasi <span style="color: #F87171;">*</span></div>
+      <input class="extra-input-field" placeholder="Misal: Kantor Klien Surabaya, Site PT XYZ, ..." value="">
+    </div>
+
+    <div class="live-preview">
+      <span class="lbl">Preview:</span> <em>Lapangan ke ____</em>
+    </div>
+
+    <div class="modal-footer" style="border: none; padding: 14px 0 0;">
+      <button class="btn btn-secondary">Cancel</button>
+      <button class="btn btn-primary" disabled>Save Resolution</button>
+    </div>
+  </div>
+</div>
+
+<div class="annot">
+  <strong>Karakteristik A2 (Split):</strong>
+  <ul>
+    <li>List + Resolve sama-sama prominent (50/50). Lebar resolve sekitar 720-800px tergantung window</li>
+    <li>User bisa lihat daftar issue lain → quick-jump tanpa close panel</li>
+    <li>Reason cards 2-col (lebih sempit dari modal 3-col tapi masih readable)</li>
+    <li>Trade-off: list tampil compact (cuma nama + date + badge), kehilangan detail "In/Out times" yang ada di tampilan saat ini</li>
+  </ul>
+</div>
+
+<div class="annot" style="background: rgba(244,114,182,0.08); border-left-color: #F472B6;">
+  <strong>Saran saya: A1 (Modal).</strong> Sesuai kata kamu "padahal yang penting di situ" —
+  modal paling dominant, paling jelas user tau ini moment-of-truth. List bisa dilihat lagi
+  setelah Cancel atau Save. Kategori grouping + live preview + smart extra-input-area bikin
+  workflow resolve jauh lebih nyaman daripada panel sempit sekarang.
+</div>
+
+</body>
+</html>
