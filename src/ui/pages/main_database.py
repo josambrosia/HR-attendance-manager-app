@@ -1,4 +1,5 @@
 import flet as ft
+import threading
 from datetime import date
 from calendar import monthrange
 from pathlib import Path
@@ -204,35 +205,56 @@ class MainDatabasePage:
 
     # ------------------------- export -------------------------
     def _export_xlsx(self):
-        from src.reports.excel_builder import build_monthly_sheets_format
+        if self.show_loading:
+            self.show_loading("📊 Generating Excel...")
 
-        rows = self.repo.list_monthly_grid(self.year, self.month, self.employee_filter)
-        normalized = [{
-            "name": r["name"],
-            "department": r.get("department"),
-            "date": r["date"],
-            "day_name": r["day_name"],
-            "day_type": r["day_type"],
-            "schedule_in": r.get("schedule_in"),
-            "schedule_out": r.get("schedule_out"),
-            "actual_in": r.get("actual_in"),
-            "actual_out": r.get("actual_out"),
-            "work_hours": r.get("work_hours"),
-            "overtime_hours": r.get("overtime_hours"),
-            "kurang_hours": None,
-            "late_minutes": r.get("late_minutes"),
-            "early_leave_minutes": r.get("early_leave_minutes"),
-            "absent_flag": r.get("absent_flag"),
-            "forgot_punch_flag": r.get("forgot_punch_flag"),
-            "ijin_flag": 1 if r.get("reason_code") else None,
-            "alasan_ijin": format_alasan(r.get("reason_code"),
-                                          r.get("location"),
-                                          r.get("reason_detail")),
-        } for r in rows]
-        out = self.exports_dir / f"main-db_{self.year}-{self.month:02d}.xlsx"
-        build_monthly_sheets_format(str(out), normalized)
-        self.status_text.value = f"✅ Exported: {out}"
-        self.status_text.update()
+        def work():
+            try:
+                from src.reports.excel_builder import build_monthly_sheets_format
+                rows = self.repo.list_monthly_grid(
+                    self.year, self.month, self.employee_filter,
+                )
+                normalized = [{
+                    "name": r["name"],
+                    "department": r.get("department"),
+                    "date": r["date"],
+                    "day_name": r["day_name"],
+                    "day_type": r["day_type"],
+                    "schedule_in": r.get("schedule_in"),
+                    "schedule_out": r.get("schedule_out"),
+                    "actual_in": r.get("actual_in"),
+                    "actual_out": r.get("actual_out"),
+                    "work_hours": r.get("work_hours"),
+                    "overtime_hours": r.get("overtime_hours"),
+                    "kurang_hours": None,
+                    "late_minutes": r.get("late_minutes"),
+                    "early_leave_minutes": r.get("early_leave_minutes"),
+                    "absent_flag": r.get("absent_flag"),
+                    "forgot_punch_flag": r.get("forgot_punch_flag"),
+                    "ijin_flag": 1 if r.get("reason_code") else None,
+                    "alasan_ijin": format_alasan(
+                        r.get("reason_code"), r.get("location"), r.get("reason_detail"),
+                    ),
+                } for r in rows]
+                out = self.exports_dir / f"main-db_{self.year}-{self.month:02d}.xlsx"
+                build_monthly_sheets_format(str(out), normalized)
+
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = f"✅ Exported: {out.name}"
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.notify:
+                    self.notify("Excel tersimpan", out.name)
+            except Exception as ex:
+                if self.hide_loading:
+                    self.hide_loading()
+                if self.notify:
+                    self.notify("Export gagal", str(ex)[:80], kind="error")
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _copy_tsv(self):
         import io, csv
@@ -264,6 +286,10 @@ class MainDatabasePage:
         try:
             self.status_text.page.set_clipboard(text)
             self.status_text.value = f"✅ Copied {len(rows)} rows as TSV — paste into Sheets"
+            if self.notify:
+                self.notify(f"{len(rows)} rows copied", "paste ke Sheets")
         except Exception as ex:
             self.status_text.value = f"❌ Clipboard failed: {ex}"
+            if self.notify:
+                self.notify("Copy gagal", str(ex)[:80], kind="error")
         self.status_text.update()
