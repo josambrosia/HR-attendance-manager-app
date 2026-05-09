@@ -301,3 +301,21 @@ def test_delete_calls_delete_resolution_and_callback(page_with_data):
 
     assert repo.get_resolution(resolved["id"]) is None
     assert deleted_callback == [True]
+
+
+def test_shift_week_updates_period(page_with_data):
+    """Verify _shift_week correctly mutates start/end and updates period_text."""
+    from datetime import timedelta
+    from unittest.mock import patch
+
+    p, _ = page_with_data
+    old_start = p.start
+    old_end = p.end
+
+    # Mock the update() call since period_text is not attached to a real page in tests
+    with patch.object(p.period_text, "update"):
+        p._shift_week(1)
+
+    assert p.start == old_start + timedelta(weeks=1)
+    assert p.end == old_end + timedelta(weeks=1)
+    assert "06 Apr" in p.period_text.value  # Shifted forward one week
