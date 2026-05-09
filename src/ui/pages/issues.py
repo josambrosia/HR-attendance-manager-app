@@ -17,11 +17,15 @@ CASE_LABELS = {
 
 class IssuesPage:
     def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark",
-                 on_data_changed=None):
+                 on_data_changed=None,
+                 show_loading=None, hide_loading=None, notify=None):
         self.repo = repo
         self.settings = settings
         self.mode = mode
         self.on_data_changed = on_data_changed
+        self.show_loading = show_loading
+        self.hide_loading = hide_loading
+        self.notify = notify
         # Default: current week (Mon-Sun)
         today = date.today()
         self.start = today - timedelta(days=today.weekday())

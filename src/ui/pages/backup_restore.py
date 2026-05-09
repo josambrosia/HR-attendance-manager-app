@@ -15,6 +15,7 @@ class BackupRestorePage:
         pre_restore_dir: str,
         mode: str = "dark",
         on_data_changed=None,
+        show_loading=None, hide_loading=None, notify=None,
     ):
         self.db_path = db_path
         self.config_path = config_path
@@ -22,6 +23,9 @@ class BackupRestorePage:
         self.pre_restore_dir = pre_restore_dir
         self.mode = mode
         self.on_data_changed = on_data_changed
+        self.show_loading = show_loading
+        self.hide_loading = hide_loading
+        self.notify = notify
 
     def build(self) -> ft.Control:
         self.status_text = ft.Text(

@@ -9,12 +9,16 @@ from src.core.constants import COLORS
 
 class ImportDataPage:
     def __init__(self, repo: Repository, settings: SettingsStore, snapshot_dir: str,
-                 mode: str = "dark", on_data_changed=None):
+                 mode: str = "dark", on_data_changed=None,
+                 show_loading=None, hide_loading=None, notify=None):
         self.repo = repo
         self.settings = settings
         self.snapshot_dir = snapshot_dir
         self.mode = mode
         self.on_data_changed = on_data_changed
+        self.show_loading = show_loading
+        self.hide_loading = hide_loading
+        self.notify = notify
         self.parsed_records = []
         self.selected_file = None
         self.file_picker = None

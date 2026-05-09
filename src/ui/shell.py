@@ -90,20 +90,35 @@ class Shell:
 
     def _build_import_data_page(self) -> ft.Control:
         from src.ui.pages.import_data import ImportDataPage
-        page_obj = ImportDataPage(self.repo, self.settings, self.snapshot_dir, self.mode,
-                                  on_data_changed=self.invalidate_data_caches)
+        page_obj = ImportDataPage(
+            self.repo, self.settings, self.snapshot_dir, self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
+        )
         return page_obj.build()
 
     def _build_issues_page(self) -> ft.Control:
         from src.ui.pages.issues import IssuesPage
-        page_obj = IssuesPage(self.repo, self.settings, self.mode,
-                              on_data_changed=self.invalidate_data_caches)
+        page_obj = IssuesPage(
+            self.repo, self.settings, self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
+        )
         return page_obj.build()
 
     def _build_edit_records_page(self) -> ft.Control:
         from src.ui.pages.edit_records import EditRecordsPage
-        page_obj = EditRecordsPage(self.repo, self.settings, self.mode,
-                                   on_data_changed=self.invalidate_data_caches)
+        page_obj = EditRecordsPage(
+            self.repo, self.settings, self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
+        )
         return page_obj.build()
 
     def _build_dashboard_page(self) -> ft.Control:
@@ -119,19 +134,35 @@ class Shell:
             self.repo, self.settings,
             str(root / "data" / "exports"),
             self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
         )
         return page_obj.build()
 
     def _build_weekly_report_page(self) -> ft.Control:
         from src.ui.pages.weekly_report import WeeklyReportPage
         exports_dir = Path(self.snapshot_dir).parent / "data" / "exports"
-        page_obj = WeeklyReportPage(self.repo, self.settings, str(exports_dir), self.mode)
+        page_obj = WeeklyReportPage(
+            self.repo, self.settings, str(exports_dir), self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
+        )
         return page_obj.build()
 
     def _build_monthly_report_page(self) -> ft.Control:
         from src.ui.pages.monthly_report import MonthlyReportPage
         exports_dir = Path(self.snapshot_dir).parent / "data" / "exports"
-        page_obj = MonthlyReportPage(self.repo, self.settings, str(exports_dir), self.mode)
+        page_obj = MonthlyReportPage(
+            self.repo, self.settings, str(exports_dir), self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
+        )
         return page_obj.build()
 
     def _build_backup_restore_page(self) -> ft.Control:
@@ -144,13 +175,21 @@ class Shell:
             str(root / "backups" / "pre-restore"),
             self.mode,
             on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
         )
         return page_obj.build()
 
     def _build_settings_page(self) -> ft.Control:
         from src.ui.pages.settings import SettingsPage
-        page_obj = SettingsPage(self.settings, self.mode,
-                                on_data_changed=self.invalidate_data_caches)
+        page_obj = SettingsPage(
+            self.settings, self.mode,
+            on_data_changed=self.invalidate_data_caches,
+            show_loading=self.show_loading,
+            hide_loading=self.hide_loading,
+            notify=self.notify,
+        )
         return page_obj.build()
 
     def build(self) -> ft.Control:

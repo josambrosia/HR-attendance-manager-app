@@ -10,7 +10,10 @@ from src.ui.components.checklist_modal import show_checklist_modal
 
 
 class MonthlyReportPage:
-    def __init__(self, repo: Repository, settings: SettingsStore, exports_dir: str, mode: str = "dark"):
+    def __init__(self, repo: Repository, settings: SettingsStore, exports_dir: str,
+                 mode: str = "dark",
+                 on_data_changed=None,
+                 show_loading=None, hide_loading=None, notify=None):
         self.repo = repo
         self.settings = settings
         self.exports_dir = Path(exports_dir)
@@ -19,6 +22,10 @@ class MonthlyReportPage:
         self.year = today.year
         self.month = today.month
         self.exports_dir.mkdir(parents=True, exist_ok=True)
+        self.on_data_changed = on_data_changed
+        self.show_loading = show_loading
+        self.hide_loading = hide_loading
+        self.notify = notify
         self.status_text = ft.Text("Pilih konten dan format export.", size=13, opacity=0.7)
 
     @property

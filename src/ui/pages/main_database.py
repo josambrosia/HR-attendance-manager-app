@@ -11,12 +11,18 @@ from src.core.settings_store import SettingsStore
 
 class MainDatabasePage:
     def __init__(self, repo: Repository, settings: SettingsStore,
-                 exports_dir: str, mode: str = "dark"):
+                 exports_dir: str, mode: str = "dark",
+                 on_data_changed=None,
+                 show_loading=None, hide_loading=None, notify=None):
         self.repo = repo
         self.settings = settings
         self.exports_dir = Path(exports_dir)
         self.exports_dir.mkdir(parents=True, exist_ok=True)
         self.mode = mode
+        self.on_data_changed = on_data_changed
+        self.show_loading = show_loading
+        self.hide_loading = hide_loading
+        self.notify = notify
         self.year, self.month = self._resolve_default_month()
         self.employee_filter: str | None = None  # staff_no or None for all
 

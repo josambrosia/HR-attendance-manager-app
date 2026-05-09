@@ -4,10 +4,14 @@ from src.core.settings_store import SettingsStore
 
 
 class SettingsPage:
-    def __init__(self, settings: SettingsStore, mode: str = "dark", on_data_changed=None):
+    def __init__(self, settings: SettingsStore, mode: str = "dark", on_data_changed=None,
+                 show_loading=None, hide_loading=None, notify=None):
         self.settings = settings
         self.mode = mode
         self.on_data_changed = on_data_changed
+        self.show_loading = show_loading
+        self.hide_loading = hide_loading
+        self.notify = notify
         self.cfg = settings.load()
         # key -> (TextField, Switch or None)
         self.fields = {}
