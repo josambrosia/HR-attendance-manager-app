@@ -16,10 +16,12 @@ CASE_LABELS = {
 
 
 class IssuesPage:
-    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark"):
+    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark",
+                 on_data_changed=None):
         self.repo = repo
         self.settings = settings
         self.mode = mode
+        self.on_data_changed = on_data_changed
         # Default: current week (Mon-Sun)
         today = date.today()
         self.start = today - timedelta(days=today.weekday())
@@ -284,6 +286,8 @@ class IssuesPage:
         self._close_panel()
         self._refresh_list()
         self.list_view.update()
+        if self.on_data_changed:
+            self.on_data_changed()
 
     def _close_panel(self):
         self.resolve_panel.visible = False

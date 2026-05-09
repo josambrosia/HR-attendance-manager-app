@@ -4,9 +4,10 @@ from src.core.settings_store import SettingsStore
 
 
 class SettingsPage:
-    def __init__(self, settings: SettingsStore, mode: str = "dark"):
+    def __init__(self, settings: SettingsStore, mode: str = "dark", on_data_changed=None):
         self.settings = settings
         self.mode = mode
+        self.on_data_changed = on_data_changed
         self.cfg = settings.load()
         # key -> (TextField, Switch or None)
         self.fields = {}
@@ -144,6 +145,8 @@ class SettingsPage:
         self.settings.update(update)
         self.cfg = self.settings.load()
         self._set_status("Settings saved", ok=True)
+        if self.on_data_changed:
+            self.on_data_changed()
 
     def _set_status(self, message: str, ok: bool):
         self.status_text.value = message

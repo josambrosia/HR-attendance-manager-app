@@ -7,10 +7,12 @@ from src.core.settings_store import SettingsStore
 
 
 class EditRecordsPage:
-    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark"):
+    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark",
+                 on_data_changed=None):
         self.repo = repo
         self.settings = settings
         self.mode = mode
+        self.on_data_changed = on_data_changed
         today = date.today()
         # Show last 30 days by default
         self.end = today
@@ -102,6 +104,8 @@ class EditRecordsPage:
             self._close_dialog(dialog)
             self._refresh()
             self.records_list.update()
+            if self.on_data_changed:
+                self.on_data_changed()
 
         dialog = ft.AlertDialog(
             modal=True, title=ft.Text(f"Edit · {rec['employee_name']} · {rec['date']}"),

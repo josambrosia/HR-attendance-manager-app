@@ -8,11 +8,13 @@ from src.core.constants import COLORS
 
 
 class ImportDataPage:
-    def __init__(self, repo: Repository, settings: SettingsStore, snapshot_dir: str, mode: str = "dark"):
+    def __init__(self, repo: Repository, settings: SettingsStore, snapshot_dir: str,
+                 mode: str = "dark", on_data_changed=None):
         self.repo = repo
         self.settings = settings
         self.snapshot_dir = snapshot_dir
         self.mode = mode
+        self.on_data_changed = on_data_changed
         self.parsed_records = []
         self.selected_file = None
         self.file_picker = None
@@ -137,6 +139,8 @@ class ImportDataPage:
         self.status_text.value = msg
         self.status_text.update()
         self._reset_after_success()
+        if self.on_data_changed:
+            self.on_data_changed()
 
     def _reset(self):
         self.parsed_records = []

@@ -27,6 +27,15 @@ NAV_GROUPS = [
 ]
 
 
+# Routes that read attendance/resolution data — their cached widget tree
+# must be dropped whenever data mutates (import, resolve, edit, restore,
+# settings change that affects derived metrics).
+_DATA_CONSUMING_ROUTES = (
+    "dashboard", "issues", "main_database",
+    "weekly_report", "monthly_report", "edit_records",
+)
+
+
 class Shell:
     def __init__(self, page: ft.Page, settings: SettingsStore, repo: Repository, snapshot_dir: str):
         self.page = page
@@ -36,6 +45,10 @@ class Shell:
         self.mode = settings.get("theme", "dark")
         self.current_route = "dashboard"
         self.content_area = ft.Container(expand=True)
+        # route -> nav button Container (for toggling active state without rebuilding sidebar)
+        self._nav_buttons: dict[str, ft.Control] = {}
+        # route -> built ft.Control (reuse on revisit; dropped on data change or theme toggle)
+        self._page_cache: dict[str, ft.Control] = {}
         self._route_builders = self._init_route_builders()
 
     def _init_route_builders(self) -> dict:
@@ -72,17 +85,20 @@ class Shell:
 
     def _build_import_data_page(self) -> ft.Control:
         from src.ui.pages.import_data import ImportDataPage
-        page_obj = ImportDataPage(self.repo, self.settings, self.snapshot_dir, self.mode)
+        page_obj = ImportDataPage(self.repo, self.settings, self.snapshot_dir, self.mode,
+                                  on_data_changed=self.invalidate_data_caches)
         return page_obj.build()
 
     def _build_issues_page(self) -> ft.Control:
         from src.ui.pages.issues import IssuesPage
-        page_obj = IssuesPage(self.repo, self.settings, self.mode)
+        page_obj = IssuesPage(self.repo, self.settings, self.mode,
+                              on_data_changed=self.invalidate_data_caches)
         return page_obj.build()
 
     def _build_edit_records_page(self) -> ft.Control:
         from src.ui.pages.edit_records import EditRecordsPage
-        page_obj = EditRecordsPage(self.repo, self.settings, self.mode)
+        page_obj = EditRecordsPage(self.repo, self.settings, self.mode,
+                                   on_data_changed=self.invalidate_data_caches)
         return page_obj.build()
 
     def _build_dashboard_page(self) -> ft.Control:
@@ -122,16 +138,21 @@ class Shell:
             self.snapshot_dir,
             str(root / "backups" / "pre-restore"),
             self.mode,
+            on_data_changed=self.invalidate_data_caches,
         )
         return page_obj.build()
 
     def _build_settings_page(self) -> ft.Control:
         from src.ui.pages.settings import SettingsPage
-        page_obj = SettingsPage(self.settings, self.mode)
+        page_obj = SettingsPage(self.settings, self.mode,
+                                on_data_changed=self.invalidate_data_caches)
         return page_obj.build()
 
     def build(self) -> ft.Control:
         self._apply_theme()
+        # Sidebar buttons are recreated; clear stale references so the new
+        # buttons get registered into self._nav_buttons via _make_nav_button.
+        self._nav_buttons.clear()
         sidebar = self._build_sidebar()
         self._render_page(self.current_route)
         return ft.Row(
@@ -168,7 +189,7 @@ class Shell:
 
     def _make_nav_button(self, route: str, label: str, icon) -> ft.Control:
         is_active = route == self.current_route
-        return ft.Container(
+        container = ft.Container(
             padding=ft.padding.symmetric(horizontal=12, vertical=10),
             border_radius=8,
             bgcolor=f"{COLORS['primary']}33" if is_active else None,
@@ -181,6 +202,9 @@ class Shell:
             on_click=lambda e, r=route: self._navigate(r),
             ink=True,
         )
+        # Track for cheap active-state toggling on _navigate (avoid full sidebar rebuild)
+        self._nav_buttons[route] = container
+        return container
 
     def _build_theme_toggle(self) -> ft.Control:
         is_dark = self.mode == "dark"
@@ -197,15 +221,56 @@ class Shell:
         )
 
     def _navigate(self, route: str):
+        old = self.current_route
         self.current_route = route
-        # Rebuild sidebar so active state updates
-        self.page.controls.clear()
-        self.page.add(self.build())
-        self.page.update()
+        # Same-route click = explicit refresh signal (e.g. Dashboard period change
+        # calls nav_callback("dashboard") to repaint with new start/end). Drop the
+        # cached widget tree so it gets rebuilt with current state.
+        if old == route:
+            self._page_cache.pop(route, None)
+
+        self._update_nav_active_state(old, route)
+        self._render_page(route)
+        # Update only the content_area instead of clearing & rebuilding the whole page.
+        # The sidebar stays mounted; only the swapped widgets travel over the wire.
+        try:
+            self.content_area.update()
+        except (AssertionError, AttributeError):
+            # content_area not yet attached (unlikely from a click handler, but safe)
+            self.page.update()
+
+    def _update_nav_active_state(self, old_route: str, new_route: str):
+        """Toggle bgcolor + font weight on affected nav buttons without rebuilding."""
+        for route in (old_route, new_route):
+            btn = self._nav_buttons.get(route)
+            if btn is None:
+                continue
+            is_active = route == new_route
+            btn.bgcolor = f"{COLORS['primary']}33" if is_active else None
+            text = btn.content.controls[1]  # Row -> [Icon, Text]
+            text.weight = ft.FontWeight.W_600 if is_active else ft.FontWeight.W_500
+            try:
+                btn.update()
+            except (AssertionError, AttributeError):
+                pass  # not yet mounted
+
+    def invalidate_data_caches(self, *routes: str) -> None:
+        """Drop cached page widget trees so they rebuild with fresh data on next visit.
+
+        Called by pages that mutate the DB (Import, Issues resolve, Edit, Restore)
+        or change settings that affect derived metrics. With no args, invalidates
+        all data-consuming routes.
+        """
+        targets = routes if routes else _DATA_CONSUMING_ROUTES
+        for r in targets:
+            self._page_cache.pop(r, None)
 
     def _toggle_theme(self):
         self.mode = "light" if self.mode == "dark" else "dark"
         self.settings.update({"theme": self.mode})
+        # Theme change repaints colors everywhere — drop all cached widget trees
+        # so they rebuild with the new palette.
+        self._page_cache.clear()
         self._apply_theme()
         self.page.controls.clear()
         self.page.add(self.build())
@@ -216,9 +281,11 @@ class Shell:
         self.page.theme_mode = ft.ThemeMode.DARK if self.mode == "dark" else ft.ThemeMode.LIGHT
 
     def _render_page(self, route: str):
-        builder = self._route_builders.get(route)
-        if builder is None:
-            # Fallback for unknown route
-            self.content_area.content = _placeholder.build(route, self.mode)
-            return
-        self.content_area.content = builder()
+        if route not in self._page_cache:
+            builder = self._route_builders.get(route)
+            if builder is None:
+                # Fallback for unknown route — placeholder is cheap, cache it too
+                self._page_cache[route] = _placeholder.build(route, self.mode)
+            else:
+                self._page_cache[route] = builder()
+        self.content_area.content = self._page_cache[route]

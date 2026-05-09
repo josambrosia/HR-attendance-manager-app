@@ -14,12 +14,14 @@ class BackupRestorePage:
         backup_dir: str,
         pre_restore_dir: str,
         mode: str = "dark",
+        on_data_changed=None,
     ):
         self.db_path = db_path
         self.config_path = config_path
         self.backup_dir = backup_dir
         self.pre_restore_dir = pre_restore_dir
         self.mode = mode
+        self.on_data_changed = on_data_changed
 
     def build(self) -> ft.Control:
         self.status_text = ft.Text(
@@ -120,6 +122,8 @@ class BackupRestorePage:
                 f"Restart aplikasi untuk memuat data baru."
             )
             self.status_text.color = COLORS["resolved"]
+            if self.on_data_changed:
+                self.on_data_changed()
         except Exception as ex:
             self.status_text.value = f"Import gagal: {ex}"
             self.status_text.color = COLORS["late_severe"]
