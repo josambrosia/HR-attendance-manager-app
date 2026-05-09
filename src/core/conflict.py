@@ -32,7 +32,7 @@ def resolve_import(
     Snapshots affected records BEFORE any change. Returns counts summary.
     """
     if not parsed_records:
-        return {"inserted": 0, "kept": 0, "overwritten": 0, "batch_id": None}
+        return {"inserted": 0, "kept": 0, "overwritten": 0, "preserved_resolved": 0, "batch_id": None}
 
     settings = settings or {}
     late_thr = settings.get("late_threshold_minutes", 15)
@@ -41,7 +41,7 @@ def resolve_import(
     dates = [r["date"] for r in parsed_records]
     batch_id = repo.create_import_batch(filename, min(dates), max(dates))
 
-    inserted = kept = overwritten = 0
+    inserted = kept = overwritten = preserved_resolved = 0
     conflicting_old_records = []
 
     for rec in parsed_records:
@@ -66,17 +66,23 @@ def resolve_import(
             inserted += 1
         elif policy == ConflictPolicy.KEEP_EXISTING:
             kept += 1
-        else:  # OVERWRITE
-            conflicting_old_records.append(dict(existing))
-            for field in RECORD_FIELDS + ["issue_case"]:
-                old_val = existing.get(field)
-                new_val = record_data.get(field)
-                if str(old_val) != str(new_val):
-                    repo.insert_history(existing["id"], field, old_val, new_val,
-                                        changed_by="import", batch_id=batch_id)
-            update_fields = {k: record_data[k] for k in RECORD_FIELDS + ["issue_case"]}
-            repo.update_attendance(existing["id"], update_fields)
-            overwritten += 1
+        else:  # OVERWRITE policy chosen
+            has_resolution = repo.get_resolution(existing["id"]) is not None
+            if has_resolution:
+                # Never overwrite resolved records, even with OVERWRITE policy.
+                # Protects manually-typed Alasan Ijin from re-import clobbering.
+                preserved_resolved += 1
+            else:
+                conflicting_old_records.append(dict(existing))
+                for field in RECORD_FIELDS + ["issue_case"]:
+                    old_val = existing.get(field)
+                    new_val = record_data.get(field)
+                    if str(old_val) != str(new_val):
+                        repo.insert_history(existing["id"], field, old_val, new_val,
+                                            changed_by="import", batch_id=batch_id)
+                update_fields = {k: record_data[k] for k in RECORD_FIELDS + ["issue_case"]}
+                repo.update_attendance(existing["id"], update_fields)
+                overwritten += 1
 
     # Write snapshot if there were conflicts
     snapshot_path = None
@@ -94,6 +100,7 @@ def resolve_import(
     repo.update_batch_counts(batch_id, inserted, kept, overwritten, snapshot_path)
     return {
         "inserted": inserted, "kept": kept, "overwritten": overwritten,
+        "preserved_resolved": preserved_resolved,
         "batch_id": batch_id, "snapshot_path": snapshot_path,
     }
 

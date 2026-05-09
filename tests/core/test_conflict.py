@@ -137,3 +137,27 @@ def test_rollback_batch_returns_zero_for_unknown_batch(tmp_path):
     repo = setup_repo(tmp_path)
     restored = rollback_batch(repo, batch_id=99999)
     assert restored == 0
+
+def test_overwrite_preserves_resolved_records(tmp_path):
+    repo = setup_repo(tmp_path)
+    snapshot_dir = tmp_path / "backups"
+
+    # First import + resolve
+    summary1 = resolve_import(
+        repo, [make_record(actual_in="08:00")], "first.xls",
+        snapshot_dir=str(snapshot_dir), policy=ConflictPolicy.KEEP_EXISTING,
+    )
+    emp = repo.get_employee_by_staff_no("1002")
+    rec = repo.get_attendance(emp["id"], "2026-04-01")
+    repo.upsert_resolution(rec["id"], reason_code="cuti")
+
+    # Re-import with OVERWRITE — should NOT overwrite the resolved record
+    summary2 = resolve_import(
+        repo, [make_record(actual_in="08:30")], "second.xls",
+        snapshot_dir=str(snapshot_dir), policy=ConflictPolicy.OVERWRITE,
+    )
+
+    assert summary2["overwritten"] == 0
+    assert summary2["preserved_resolved"] == 1
+    rec_after = repo.get_attendance(emp["id"], "2026-04-01")
+    assert rec_after["actual_in"] == "08:00"  # original preserved
