@@ -3,6 +3,7 @@ from datetime import date
 from pathlib import Path
 from calendar import monthrange
 from src.core.constants import COLORS
+from src.core.alasan_format import format_alasan
 from src.db.repository import Repository
 from src.core.settings_store import SettingsStore
 from src.ui.components.checklist_modal import show_checklist_modal
@@ -146,16 +147,26 @@ class MonthlyReportPage:
             self.start.isoformat(), self.end.isoformat(), search="",
         )
         normalized = [{
-            "date": r["date"],
             "name": r["employee_name"],
-            "staff_no": r["staff_no"],
-            "actual_in": r["actual_in"],
-            "actual_out": r["actual_out"],
-            "late_minutes": r["late_minutes"],
-            "early_leave_minutes": r["early_leave_minutes"],
-            "reason_code": r["reason_code"],
-            "location": r["location"],
-            "reason_detail": r["reason_detail"],
+            "department": r.get("department"),
+            "date": r["date"],
+            "day_name": r.get("day_name"),
+            "day_type": r.get("day_type"),
+            "schedule_in": r.get("schedule_in"),
+            "schedule_out": r.get("schedule_out"),
+            "actual_in": r.get("actual_in"),
+            "actual_out": r.get("actual_out"),
+            "work_hours": r.get("work_hours"),
+            "overtime_hours": r.get("overtime_hours"),
+            "kurang_hours": None,  # not stored in v1.0; left blank
+            "late_minutes": r.get("late_minutes"),
+            "early_leave_minutes": r.get("early_leave_minutes"),
+            "absent_flag": r.get("absent_flag"),
+            "forgot_punch_flag": r.get("forgot_punch_flag"),
+            "ijin_flag": 1 if r.get("reason_code") else None,
+            "alasan_ijin": format_alasan(r.get("reason_code"),
+                                          r.get("location"),
+                                          r.get("reason_detail")),
         } for r in rows]
         build_monthly_sheets_format(output, normalized)
 
