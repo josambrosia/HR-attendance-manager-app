@@ -15,13 +15,22 @@ from src.ui.shell import Shell, _DATA_CONSUMING_ROUTES
 
 
 @pytest.fixture
-def shell(tmp_path):
+def shell(tmp_path, monkeypatch):
     settings = SettingsStore(str(tmp_path / "config.json"))
     settings.load()
     repo = Repository(str(tmp_path / "test.db"))
     repo.init_schema()
     snapshot_dir = tmp_path / "snapshots"
     snapshot_dir.mkdir()
+
+    # Run threading.Thread synchronously in tests so the Main DB async-load
+    # path completes before assertions. The real app uses a real thread.
+    class _SyncThread:
+        def __init__(self, target, daemon=False, **_):
+            self._target = target
+        def start(self):
+            self._target()
+    monkeypatch.setattr("src.ui.shell.threading.Thread", _SyncThread)
 
     page = MagicMock()  # Flet page stub — not exercised by cache logic
     s = Shell(page, settings, repo, str(snapshot_dir))

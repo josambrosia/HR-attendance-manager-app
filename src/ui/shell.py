@@ -1,3 +1,5 @@
+import threading
+
 import flet as ft
 from pathlib import Path
 from src.core.constants import COLORS
@@ -274,6 +276,43 @@ class Shell:
             self._page_cache.pop(route, None)
 
         self._update_nav_active_state(old, route)
+
+        # Main DB first-load is heavy (~2-3s for the 17-col grid render). Build
+        # the widget tree on a background thread so the loading overlay paints
+        # immediately on the UI thread instead of waiting for the synchronous
+        # builder to finish. Cross-thread DB access matches the precedent in
+        # `issues.py:_schedule_refresh`.
+        if route == "main_database" and route not in self._page_cache:
+            self._loading.show("📊 Loading Main Database...")
+            # Clear current content so user sees it transition (instead of
+            # the previous page lingering until build completes)
+            self.content_area.content = ft.Container()
+            try:
+                self.content_area.update()
+            except (AssertionError, AttributeError):
+                pass
+
+            def build_async():
+                try:
+                    builder = self._route_builders.get(route)
+                    widget = (builder() if builder is not None
+                              else _placeholder.build(route, self.mode))
+                    # Race guard: user may have nav-ed away during the build
+                    if self.current_route != "main_database":
+                        return
+                    self._page_cache[route] = widget
+                    self.content_area.content = widget
+                    self._loading.hide()
+                    try:
+                        self.content_area.update()
+                    except (AssertionError, AttributeError):
+                        pass
+                except Exception:
+                    self._loading.hide()
+
+            threading.Thread(target=build_async, daemon=True).start()
+            return
+
         self._render_page(route)
         # Update only the content_area instead of clearing & rebuilding the whole page.
         # The sidebar stays mounted; only the swapped widgets travel over the wire.
