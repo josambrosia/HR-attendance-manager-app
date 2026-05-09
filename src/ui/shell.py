@@ -58,6 +58,8 @@ class Shell:
                     builders[route] = self._build_monthly_report_page
                 elif route == "backup_restore":
                     builders[route] = self._build_backup_restore_page
+                elif route == "settings":
+                    builders[route] = self._build_settings_page
                 else:
                     # Capture per-iteration via default args
                     builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
@@ -105,6 +107,11 @@ class Shell:
             str(root / "backups" / "pre-restore"),
             self.mode,
         )
+        return page_obj.build()
+
+    def _build_settings_page(self) -> ft.Control:
+        from src.ui.pages.settings import SettingsPage
+        page_obj = SettingsPage(self.settings, self.mode)
         return page_obj.build()
 
     def build(self) -> ft.Control:
