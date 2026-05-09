@@ -56,6 +56,8 @@ class Shell:
                     builders[route] = self._build_weekly_report_page
                 elif route == "monthly_report":
                     builders[route] = self._build_monthly_report_page
+                elif route == "backup_restore":
+                    builders[route] = self._build_backup_restore_page
                 else:
                     # Capture per-iteration via default args
                     builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
@@ -91,6 +93,18 @@ class Shell:
         from src.ui.pages.monthly_report import MonthlyReportPage
         exports_dir = Path(self.snapshot_dir).parent / "data" / "exports"
         page_obj = MonthlyReportPage(self.repo, self.settings, str(exports_dir), self.mode)
+        return page_obj.build()
+
+    def _build_backup_restore_page(self) -> ft.Control:
+        from src.ui.pages.backup_restore import BackupRestorePage
+        root = Path(self.snapshot_dir).parent
+        page_obj = BackupRestorePage(
+            str(root / "data" / "app.db"),
+            str(root / "config.json"),
+            self.snapshot_dir,
+            str(root / "backups" / "pre-restore"),
+            self.mode,
+        )
         return page_obj.build()
 
     def build(self) -> ft.Control:
