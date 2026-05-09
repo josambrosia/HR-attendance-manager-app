@@ -61,3 +61,27 @@ def test_pulang_cepat_threshold_null_disables_f():
 def test_no_issue_clean_record():
     rec = make_record()
     assert classify_issue(rec) is None
+
+
+from src.core.issue_detector import recommend
+
+
+def test_recommend_for_case_a():
+    assert recommend("A") == "Tidak Hadir / Cuti / Izin Sakit?"
+
+
+def test_recommend_for_case_b():
+    assert recommend("B") == "Izin Pagi / Lupa Absen Masuk?"
+
+
+def test_recommend_for_case_c():
+    assert recommend("C") == "Lupa Absen Pulang / Pulang Lebih Awal?"
+
+
+def test_recommend_for_case_f():
+    assert recommend("F") == "Pulang Lebih Awal?"
+
+
+def test_recommend_for_unknown_returns_none():
+    assert recommend("Z") is None
+    assert recommend(None) is None

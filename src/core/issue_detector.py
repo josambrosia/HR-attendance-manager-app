@@ -56,3 +56,19 @@ def needs_cell_color(case: str | None) -> str | None:
         "E": "red",
         "F": "orange",
     }.get(case)
+
+
+RECOMMENDATIONS = {
+    "A": "Tidak Hadir / Cuti / Izin Sakit?",
+    "B": "Izin Pagi / Lupa Absen Masuk?",
+    "C": "Lupa Absen Pulang / Pulang Lebih Awal?",
+    "F": "Pulang Lebih Awal?",
+}
+
+
+def recommend(issue_case: str | None) -> str | None:
+    """Suggest plausible resolution categories given an issue_case.
+    Used by Issues page UI as an inline hint."""
+    if not issue_case:
+        return None
+    return RECOMMENDATIONS.get(issue_case)
