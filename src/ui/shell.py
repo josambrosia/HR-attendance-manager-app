@@ -12,6 +12,9 @@ NAV_GROUPS = [
         ("issues", "Issues", ft.Icons.WARNING_AMBER),
         ("dashboard", "Dashboard", ft.Icons.DASHBOARD),
     ]),
+    ("Database", [
+        ("main_database", "Main Database", ft.Icons.TABLE_VIEW),
+    ]),
     ("Reports", [
         ("weekly_report", "Weekly Report", ft.Icons.CALENDAR_VIEW_WEEK),
         ("monthly_report", "Monthly Report", ft.Icons.CALENDAR_MONTH),
@@ -52,6 +55,8 @@ class Shell:
                     builders[route] = self._build_edit_records_page
                 elif route == "dashboard":
                     builders[route] = self._build_dashboard_page
+                elif route == "main_database":
+                    builders[route] = self._build_main_database_page
                 elif route == "weekly_report":
                     builders[route] = self._build_weekly_report_page
                 elif route == "monthly_report":
@@ -84,6 +89,16 @@ class Shell:
         from src.ui.pages.dashboard import DashboardPage
         page_obj = DashboardPage(self.repo, self.settings, self.mode,
                                  nav_callback=self._navigate)
+        return page_obj.build()
+
+    def _build_main_database_page(self) -> ft.Control:
+        from src.ui.pages.main_database import MainDatabasePage
+        root = Path(self.snapshot_dir).parent
+        page_obj = MainDatabasePage(
+            self.repo, self.settings,
+            str(root / "data" / "exports"),
+            self.mode,
+        )
         return page_obj.build()
 
     def _build_weekly_report_page(self) -> ft.Control:
