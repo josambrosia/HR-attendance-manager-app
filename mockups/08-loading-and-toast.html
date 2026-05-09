@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Josaphat Tech Solution — Loading & Toast Variants</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+    background: #0f0717;
+    color: #e9d5ff;
+    padding: 32px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 1.6rem; font-weight: 800; color: #f5f3ff; margin-bottom: 6px; }
+  h2 { font-size: 1.15rem; font-weight: 800; color: #C084FC; margin-top: 36px; margin-bottom: 8px; letter-spacing: 0.02em; }
+  .subtitle { color: #A78BFA; font-size: 0.9rem; margin-bottom: 24px; max-width: 720px; line-height: 1.5; }
+  .section-intro { color: #DDD6FE; font-size: 0.85rem; margin: 8px 0 16px; max-width: 800px; line-height: 1.5; }
+
+  /* ============ MOCKUP GRID ============ */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .variant-card {
+    background: #1a0b2e;
+    border: 1px solid #4c1d95;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .variant-label {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(124,58,237,0.18), rgba(244,114,182,0.10));
+    border-bottom: 1px solid #4c1d95;
+  }
+  .variant-name { font-weight: 800; font-size: 0.95rem; color: #f5f3ff; }
+  .variant-tagline { font-size: 0.75rem; color: #C084FC; margin-top: 2px; }
+
+  /* App stage (used as container for the overlay variants) */
+  .stage {
+    position: relative;
+    height: 360px;
+    background: #1a0b2e;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 70px 1fr;
+  }
+  .mini-sidebar {
+    background: #2d1b4e;
+    border-right: 1px solid #4c1d95;
+    padding: 12px 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  .mini-logo {
+    width: 28px; height: 32px;
+    background: linear-gradient(135deg, #7C3AED 0%, #F472B6 100%);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 900; font-size: 12px;
+  }
+  .mini-nav-item {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #DDD6FE; font-size: 0.9rem;
+  }
+  .mini-nav-item.active { background: rgba(124,58,237,0.3); color: #f5f3ff; }
+  .mini-content {
+    padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .mini-title { font-weight: 800; font-size: 0.95rem; color: #f5f3ff; }
+  .mini-line { height: 8px; background: rgba(167,139,250,0.15); border-radius: 4px; }
+  .mini-line.short { width: 60%; }
+  .mini-card {
+    margin-top: 6px; padding: 10px; border-radius: 8px;
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(124,58,237,0.25);
+    height: 60px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .mini-card .mini-line { height: 6px; }
+
+  /* ===== LOADING L1: Full Dim + Centered Modal ===== */
+  .l1-overlay {
+    position: absolute; inset: 0;
+    background: rgba(15, 7, 23, 0.78);
+    backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .l1-card {
+    background: #2d1b4e;
+    border: 2px solid #7C3AED;
+    border-radius: 16px;
+    padding: 22px 28px;
+    box-shadow: 0 12px 40px rgba(124,58,237,0.35);
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    min-width: 200px;
+  }
+  .l1-spinner {
+    width: 36px; height: 36px;
+    border: 3px solid rgba(196,141,252,0.25);
+    border-top-color: #F472B6;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .l1-title { font-weight: 700; font-size: 0.9rem; color: #f5f3ff; }
+  .l1-subtitle { font-size: 0.7rem; color: #C084FC; }
+
+  /* ===== LOADING L2: Top Progress Strip + Light Dim ===== */
+  .l2-dim {
+    position: absolute; inset: 0;
+    background: rgba(15, 7, 23, 0.45);
+  }
+  .l2-strip {
+    position: absolute; top: 0; left: 70px; right: 0;
+    background: rgba(45,27,78,0.95);
+    border-bottom: 1px solid #7C3AED;
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .l2-bar-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(167,139,250,0.2);
+    border-radius: 2px; overflow: hidden;
+    position: relative;
+  }
+  .l2-bar-fill {
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, #7C3AED, #F472B6);
+    width: 38%;
+    animation: l2slide 1.5s ease-in-out infinite;
+  }
+  @keyframes l2slide {
+    0% { transform: translateX(-30%); }
+    100% { transform: translateX(180%); }
+  }
+  .l2-label { font-size: 0.78rem; color: #f5f3ff; font-weight: 600; white-space: nowrap; }
+
+  /* ===== LOADING L3: Bottom Sheet ===== */
+  .l3-dim {
+    position: absolute; inset: 0;
+    background: rgba(15, 7, 23, 0.55);
+  }
+  .l3-sheet {
+    position: absolute; bottom: 0; left: 70px; right: 0;
+    background: #2d1b4e;
+    border-top: 2px solid #7C3AED;
+    border-radius: 14px 14px 0 0;
+    padding: 16px 18px;
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.5);
+    display: flex; align-items: center; gap: 14px;
+  }
+  .l3-spinner {
+    width: 24px; height: 24px;
+    border: 2.5px solid rgba(196,141,252,0.25);
+    border-top-color: #F472B6;
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    flex-shrink: 0;
+  }
+  .l3-text { display: flex; flex-direction: column; gap: 3px; }
+  .l3-title { font-size: 0.85rem; font-weight: 700; color: #f5f3ff; }
+  .l3-subtitle { font-size: 0.72rem; color: #C084FC; }
+
+  /* ===== TOAST T1: Frosted Glass ===== */
+  .t1 {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(52, 211, 153, 0.18);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(52, 211, 153, 0.45);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 24px rgba(52,211,153,0.15);
+    color: #f5f3ff;
+    font-size: 0.78rem; font-weight: 600;
+    max-width: 240px;
+  }
+  .t1-icon { color: #34D399; font-size: 1rem; }
+  .t1-title { color: #f5f3ff; }
+  .t1-desc { font-size: 0.68rem; color: #BBF7D0; font-weight: 500; margin-top: 1px; }
+
+  /* ===== TOAST T2: Translucent Solid ===== */
+  .t2 {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(45, 27, 78, 0.82);
+    border-left: 3px solid #34D399;
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    color: #f5f3ff;
+    font-size: 0.78rem; font-weight: 600;
+    max-width: 240px;
+  }
+  .t2-icon { color: #34D399; font-size: 1rem; }
+  .t2-desc { font-size: 0.68rem; color: #C7F0DD; font-weight: 500; margin-top: 1px; }
+
+  /* ===== TOAST T3: Minimal Pill ===== */
+  .t3 {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(52, 211, 153, 0.10);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    border-radius: 999px;
+    padding: 6px 14px;
+    display: flex; align-items: center; gap: 8px;
+    color: #BBF7D0;
+    font-size: 0.74rem; font-weight: 600;
+  }
+  .t3-icon { color: #34D399; }
+
+  /* ============ COMPARISON TABLE ============ */
+  .compare {
+    margin-top: 32px;
+    background: #1a0b2e;
+    border: 1px solid #4c1d95;
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .compare h3 { color: #F472B6; font-size: 0.9rem; font-weight: 800; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(167,139,250,0.15); }
+  th { color: #C084FC; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td { color: #DDD6FE; vertical-align: top; }
+  td:first-child { font-weight: 700; color: #f5f3ff; white-space: nowrap; }
+  .pro { color: #BBF7D0; }
+  .con { color: #FECACA; }
+
+  /* ============ SCENARIO ============ */
+  .scenario {
+    margin-top: 32px;
+    background: #1a0b2e;
+    border: 1px solid #4c1d95;
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .scenario h3 { color: #F472B6; font-size: 0.9rem; font-weight: 800; margin-bottom: 14px; }
+  .scenario-flow {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: stretch;
+  }
+  .scen-step {
+    background: rgba(45,27,78,0.55);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .scen-step-label {
+    font-size: 0.7rem; font-weight: 700; color: #F472B6;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .scen-step-title { font-size: 0.95rem; font-weight: 700; color: #f5f3ff; }
+  .scen-step-desc { font-size: 0.78rem; color: #DDD6FE; line-height: 1.5; }
+
+  .footnote {
+    margin-top: 32px;
+    padding: 16px 20px;
+    background: rgba(124,58,237,0.08);
+    border-left: 3px solid #7C3AED;
+    border-radius: 4px;
+    font-size: 0.82rem; color: #DDD6FE; line-height: 1.5;
+  }
+  .footnote strong { color: #f5f3ff; }
+</style>
+</head>
+<body>
+
+<h1>Loading Indicators & Success Toasts — Variants</h1>
+<p class="subtitle">
+  Pilih satu varian Loading (kiri/tengah/kanan baris pertama) dan satu varian Toast (kiri/tengah/kanan baris kedua).
+  Mockup nih dirender di browser; di app aslinya pakai Flet — semua varian feasible kecuali catatan di footnote.
+</p>
+
+<!-- =============================== LOADING ROW =============================== -->
+<h2>Loading Indicator (saat operasi berjalan)</h2>
+<p class="section-intro">
+  Hanya muncul saat operasi <strong>lama</strong>: Import .xls, Export PDF/Excel, Backup, Restore, Main DB first load.
+  Ketiganya <strong>block clicks</strong> — user tidak bisa pindah halaman selama loading.
+</p>
+
+<div class="grid">
+  <!-- L1 -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <div class="variant-name">L1 — Centered Modal Card</div>
+      <div class="variant-tagline">Paling jelas · klasik · paling memberi rasa "tunggu dulu"</div>
+    </div>
+    <div class="stage">
+      <div class="mini-sidebar">
+        <div class="mini-logo">J</div>
+        <div class="mini-nav-item active">📥</div>
+        <div class="mini-nav-item">⚠</div>
+        <div class="mini-nav-item">📊</div>
+      </div>
+      <div class="mini-content">
+        <div class="mini-title">Import Data</div>
+        <div class="mini-line"></div>
+        <div class="mini-line short"></div>
+        <div class="mini-card"><div class="mini-line"></div><div class="mini-line short"></div></div>
+      </div>
+      <div class="l1-overlay">
+        <div class="l1-card">
+          <div class="l1-spinner"></div>
+          <div class="l1-title">Sedang import data...</div>
+          <div class="l1-subtitle">april-1-10.xls · 247 baris</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- L2 -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <div class="variant-name">L2 — Top Progress Strip</div>
+      <div class="variant-tagline">Subtle · animasi indeterminate di atas · konten tetap kelihatan</div>
+    </div>
+    <div class="stage">
+      <div class="mini-sidebar">
+        <div class="mini-logo">J</div>
+        <div class="mini-nav-item active">📥</div>
+        <div class="mini-nav-item">⚠</div>
+        <div class="mini-nav-item">📊</div>
+      </div>
+      <div class="mini-content" style="margin-top: 32px;">
+        <div class="mini-title">Import Data</div>
+        <div class="mini-line"></div>
+        <div class="mini-line short"></div>
+        <div class="mini-card"><div class="mini-line"></div><div class="mini-line short"></div></div>
+      </div>
+      <div class="l2-dim"></div>
+      <div class="l2-strip">
+        <div class="l2-label">📥 Sedang import...</div>
+        <div class="l2-bar-track">
+          <div class="l2-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- L3 -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <div class="variant-name">L3 — Bottom Sheet Card</div>
+      <div class="variant-tagline">Modern · slide dari bawah · konten utama masih kelihatan</div>
+    </div>
+    <div class="stage">
+      <div class="mini-sidebar">
+        <div class="mini-logo">J</div>
+        <div class="mini-nav-item active">📥</div>
+        <div class="mini-nav-item">⚠</div>
+        <div class="mini-nav-item">📊</div>
+      </div>
+      <div class="mini-content">
+        <div class="mini-title">Import Data</div>
+        <div class="mini-line"></div>
+        <div class="mini-line short"></div>
+        <div class="mini-card"><div class="mini-line"></div><div class="mini-line short"></div></div>
+      </div>
+      <div class="l3-dim"></div>
+      <div class="l3-sheet">
+        <div class="l3-spinner"></div>
+        <div class="l3-text">
+          <div class="l3-title">Sedang import data...</div>
+          <div class="l3-subtitle">april-1-10.xls · 247 baris</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="compare">
+  <h3>Trade-off ringkas — Loading</h3>
+  <table>
+    <thead>
+      <tr><th>Varian</th><th>Plus</th><th>Minus</th><th>Cocok untuk</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>L1 Modal</td>
+        <td class="pro">Paling jelas. User pasti sadar. Bisa muat detail (filename, jumlah baris)</td>
+        <td class="con">Paling intrusif. Konten ketutup. Kalau operasi cuma 1-2 detik agak overkill</td>
+        <td>Heavy ops (Restore, Backup, Import banyak baris)</td>
+      </tr>
+      <tr>
+        <td>L2 Top Strip</td>
+        <td class="pro">Konten tetap visible. Mirip pola browser loading</td>
+        <td class="con">Kurang dramatis — user mungkin tetap coba klik (tapi tetap di-block)</td>
+        <td>Medium ops (Export PDF, Main DB load)</td>
+      </tr>
+      <tr>
+        <td>L3 Bottom Sheet</td>
+        <td class="pro">Modern. Hover di atas konten tanpa sembunyiin. Cukup prominent</td>
+        <td class="con">Lebih banyak kerja implementasinya (animasi slide-up). Ada risk content geser</td>
+        <td>Medium ops kalau mau tampilan modern</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- =============================== TOAST ROW =============================== -->
+<h2 style="margin-top: 48px;">Success Toast (notifikasi berhasil — kanan atas, non-blocking)</h2>
+<p class="section-intro">
+  Muncul setelah operasi sukses. <strong>Tidak block clicks</strong>. Auto-dismiss setelah 3-4 detik atau bisa di-close manual.
+  Sesuai permintaanmu: kanan atas + transparan.
+</p>
+
+<div class="grid">
+  <!-- T1 -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <div class="variant-name">T1 — Frosted Glass</div>
+      <div class="variant-tagline">Paling "transparan" · backdrop blur · terasa premium</div>
+    </div>
+    <div class="stage">
+      <div class="mini-sidebar">
+        <div class="mini-logo">J</div>
+        <div class="mini-nav-item">📥</div>
+        <div class="mini-nav-item">⚠</div>
+        <div class="mini-nav-item active">📊</div>
+      </div>
+      <div class="mini-content">
+        <div class="mini-title">Dashboard</div>
+        <div class="mini-line"></div>
+        <div class="mini-line short"></div>
+        <div class="mini-card"><div class="mini-line"></div><div class="mini-line short"></div></div>
+      </div>
+      <div class="t1">
+        <div class="t1-icon">✅</div>
+        <div>
+          <div class="t1-title">Import berhasil</div>
+          <div class="t1-desc">247 new · 0 conflict</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- T2 -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <div class="variant-name">T2 — Translucent Solid</div>
+      <div class="variant-tagline">Semi-transparan · border kiri hijau · readable di semua bg</div>
+    </div>
+    <div class="stage">
+      <div class="mini-sidebar">
+        <div class="mini-logo">J</div>
+        <div class="mini-nav-item">📥</div>
+        <div class="mini-nav-item">⚠</div>
+        <div class="mini-nav-item active">📊</div>
+      </div>
+      <div class="mini-content">
+        <div class="mini-title">Dashboard</div>
+        <div class="mini-line"></div>
+        <div class="mini-line short"></div>
+        <div class="mini-card"><div class="mini-line"></div><div class="mini-line short"></div></div>
+      </div>
+      <div class="t2">
+        <div class="t2-icon">✅</div>
+        <div>
+          <div>Import berhasil</div>
+          <div class="t2-desc">247 new · 0 conflict</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- T3 -->
+  <div class="variant-card">
+    <div class="variant-label">
+      <div class="variant-name">T3 — Minimal Pill</div>
+      <div class="variant-tagline">Paling subtle · cocok kalau notif sering muncul</div>
+    </div>
+    <div class="stage">
+      <div class="mini-sidebar">
+        <div class="mini-logo">J</div>
+        <div class="mini-nav-item">📥</div>
+        <div class="mini-nav-item">⚠</div>
+        <div class="mini-nav-item active">📊</div>
+      </div>
+      <div class="mini-content">
+        <div class="mini-title">Dashboard</div>
+        <div class="mini-line"></div>
+        <div class="mini-line short"></div>
+        <div class="mini-card"><div class="mini-line"></div><div class="mini-line short"></div></div>
+      </div>
+      <div class="t3">
+        <div class="t3-icon">✅</div>
+        <div>Import berhasil · 247 baris</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="compare">
+  <h3>Trade-off ringkas — Toast</h3>
+  <table>
+    <thead>
+      <tr><th>Varian</th><th>Plus</th><th>Minus</th><th>Cocok untuk</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>T1 Frosted Glass</td>
+        <td class="pro">Paling sesuai keinginan "transparan". Look premium</td>
+        <td class="con">Backdrop-filter blur di Flet/Flutter butuh `ft.BackdropFilter` — feasible tapi sedikit lebih ribet</td>
+        <td>Kalau mau kesan modern</td>
+      </tr>
+      <tr>
+        <td>T2 Translucent Solid</td>
+        <td class="pro">Reliable di semua kondisi background. Tetap "transparan-ish" (opacity 82%). Mudah implement</td>
+        <td class="con">Kurang fancy dibanding T1</td>
+        <td>Pilihan paling aman untuk readability</td>
+      </tr>
+      <tr>
+        <td>T3 Minimal Pill</td>
+        <td class="pro">Sangat subtle. Cocok kalau ada banyak notif berurutan</td>
+        <td class="con">Mudah miss kalau user lagi fokus ke konten utama</td>
+        <td>Notif yang sangat frequent</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- =============================== SCENARIO =============================== -->
+<div class="scenario">
+  <h3>Skenario lengkap — Import .xls (rekomendasi: L1 + T1 atau L1 + T2)</h3>
+  <div class="scenario-flow">
+    <div class="scen-step">
+      <div class="scen-step-label">Step 1 · User klik</div>
+      <div class="scen-step-title">Klik "✅ Import"</div>
+      <div class="scen-step-desc">User memilih file dan klik tombol Import.</div>
+    </div>
+    <div class="scen-step">
+      <div class="scen-step-label">Step 2 · Loading muncul</div>
+      <div class="scen-step-title">L1 modal aktif (~2 detik)</div>
+      <div class="scen-step-desc">Modal "Sedang import... 247 baris" muncul. Sidebar tidak responsif. User tidak bisa nav.</div>
+    </div>
+    <div class="scen-step">
+      <div class="scen-step-label">Step 3 · Selesai</div>
+      <div class="scen-step-title">Modal hilang + toast muncul</div>
+      <div class="scen-step-desc">Toast kanan atas muncul: "✅ Import berhasil · 247 new · 0 conflict". Auto-dismiss 4 detik.</div>
+    </div>
+  </div>
+</div>
+
+<div class="footnote">
+  <strong>Catatan teknis (Flet 0.25.2):</strong>
+  Semua varian feasible. T1 (frosted glass) butuh <code>ft.Container(blur=...)</code> atau widget <code>ft.BackdropFilter</code> — sedikit lebih banyak boilerplate dibanding T2 yang cukup pakai <code>bgcolor</code> dengan alpha channel. L3 butuh <code>ft.AnimatedSwitcher</code> untuk slide-up. L1 paling lurus pakai <code>page.overlay.append(Container)</code>.
+</div>
+
+</body>
+</html>
