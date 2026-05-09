@@ -199,3 +199,28 @@ class Repository:
             (start_date, end_date),
         )
         return [dict(row) for row in cursor.fetchall()]
+
+    def list_history_for_record(self, record_id: int) -> list[dict]:
+        cursor = self.conn.execute(
+            """SELECT * FROM record_history
+               WHERE record_id=? ORDER BY changed_at DESC""",
+            (record_id,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+    def list_attendance_with_resolutions(self, start_date: str, end_date: str,
+                                          search: str = "") -> list[dict]:
+        pattern = f"%{search}%" if search else "%"
+        cursor = self.conn.execute(
+            """SELECT ar.*, e.name AS employee_name, e.staff_no,
+                      r.reason_code, r.location, r.reason_detail
+               FROM attendance_records ar
+               JOIN employees e ON ar.employee_id = e.id
+               LEFT JOIN resolutions r ON r.record_id = ar.id
+               WHERE ar.date >= ? AND ar.date <= ?
+                 AND (e.name LIKE ? OR e.staff_no LIKE ?)
+                 AND ar.day_type = 'Hari Kerja'
+               ORDER BY ar.date DESC, e.name""",
+            (start_date, end_date, pattern, pattern),
+        )
+        return [dict(row) for row in cursor.fetchall()]
