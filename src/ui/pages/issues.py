@@ -748,7 +748,19 @@ class ResolveModal:
 
         self._delete_btn.visible = edit_mode
         self._save_btn.text = "Update Resolution" if edit_mode else "Save Resolution"
-        self._save_btn.disabled = not edit_mode  # Tasks 7+ refine this
+
+        # Pre-fill from existing resolution if edit mode
+        if edit_mode and issue.get("reason_code"):
+            self._extra_input_field.value = (
+                issue.get("location") or issue.get("reason_detail") or ""
+            )
+            self._select_reason(issue["reason_code"])
+        else:
+            self._extra_input_field.value = ""
+            # Hide extra/preview until user picks
+            self._extra_input_area.visible = False
+            self._live_preview_area.visible = False
+            self._save_btn.disabled = True
 
         self._dialog.visible = True
         try:
@@ -764,9 +776,61 @@ class ResolveModal:
             pass
 
     def _save(self) -> None:
-        # Stub — Task 8 implements
-        pass
+        from src.core.resolver import apply_resolution
+        if self._issue is None or self._selected_reason is None:
+            return
+        kwargs = {}
+        extra = _REASON_NEEDS_INPUT.get(self._selected_reason)
+        if extra == "location":
+            kwargs["location"] = self._extra_input_field.value or ""
+        elif extra == "reason_detail":
+            kwargs["reason_detail"] = self._extra_input_field.value or ""
+        kwargs["penalty_minutes"] = self.settings.get("lupa_absen_penalty_minutes")
+        apply_resolution(self.repo, self._issue["id"],
+                          self._selected_reason, **kwargs)
+        self.close()
+        if self.on_resolved:
+            self.on_resolved()
 
     def _confirm_delete(self) -> None:
-        # Stub — Task 8 implements
-        pass
+        # Build a small confirmation AlertDialog and show via page.overlay.
+        # Bypass the dialog by calling _do_delete() directly in tests.
+        if self._issue is None:
+            return
+        confirm = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("Hapus resolution?"),
+            content=ft.Text(
+                f"Resolution untuk {self._issue['employee_name']} "
+                f"({self._issue['date']}) akan dihapus dan kembali ke Pending."
+            ),
+            actions=[
+                ft.TextButton("Batal", on_click=lambda e: self._dismiss_confirm(confirm)),
+                ft.ElevatedButton(
+                    "Hapus", on_click=lambda e: (self._dismiss_confirm(confirm),
+                                                  self._do_delete()),
+                    bgcolor=COLORS["late_severe"], color="white",
+                ),
+            ],
+        )
+        self.page.overlay.append(confirm)
+        confirm.open = True
+        try:
+            self.page.update()
+        except (AssertionError, AttributeError):
+            pass
+
+    def _dismiss_confirm(self, confirm: ft.AlertDialog) -> None:
+        confirm.open = False
+        try:
+            self.page.update()
+        except (AssertionError, AttributeError):
+            pass
+
+    def _do_delete(self) -> None:
+        if self._issue is None:
+            return
+        self.repo.delete_resolution(self._issue["id"])
+        self.close()
+        if self.on_deleted:
+            self.on_deleted()

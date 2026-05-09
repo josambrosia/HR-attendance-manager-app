@@ -244,3 +244,60 @@ def test_live_preview_updates_on_extra_input(page_with_data):
     p._modal._extra_input_field.value = "Surabaya"
     p._modal._update_live_preview()
     assert "Lapangan ke Surabaya" in p._modal._live_preview_text.value
+
+
+def test_save_calls_apply_resolution_and_callback(page_with_data):
+    p, repo = page_with_data
+    # Find an existing pending record
+    rows = repo.list_issues_with_resolutions("2026-03-30", "2026-04-05")
+    pending = next(r for r in rows if r["reason_code"] is None)
+
+    callback_fired = []
+    p._modal.on_resolved = lambda: callback_fired.append(True)
+
+    p._modal.open_for(pending, edit_mode=False)
+    p._modal._select_reason("cuti")
+    p._modal._save()
+
+    # Resolution row was created in DB
+    after = repo.get_resolution(pending["id"])
+    assert after is not None
+    assert after["reason_code"] == "cuti"
+    # on_resolved callback fired
+    assert callback_fired == [True]
+    # Modal closed
+    assert p._modal._dialog.visible is False
+
+
+def test_edit_mode_prefills_reason_and_extra(page_with_data):
+    p, repo = page_with_data
+    rows = repo.list_issues_with_resolutions("2026-03-30", "2026-04-05")
+    resolved = next(r for r in rows if r["reason_code"] is not None)
+    # Update with location to test pre-fill
+    repo.upsert_resolution(resolved["id"], reason_code="tugas_lapangan",
+                           location="Surabaya")
+    refreshed = repo.list_issues_with_resolutions("2026-03-30", "2026-04-05")
+    issue = next(r for r in refreshed if r["id"] == resolved["id"])
+
+    p._modal.open_for(issue, edit_mode=True)
+    assert p._modal._selected_reason == "tugas_lapangan"
+    assert p._modal._extra_input_field.value == "Surabaya"
+    assert p._modal._extra_input_area.visible is True
+    assert p._modal._delete_btn.visible is True
+    assert p._modal._save_btn.text == "Update Resolution"
+
+
+def test_delete_calls_delete_resolution_and_callback(page_with_data):
+    p, repo = page_with_data
+    rows = repo.list_issues_with_resolutions("2026-03-30", "2026-04-05")
+    resolved = next(r for r in rows if r["reason_code"] is not None)
+
+    deleted_callback = []
+    p._modal.on_deleted = lambda: deleted_callback.append(True)
+
+    # Bypass confirmation by directly calling the delete worker
+    p._modal.open_for(resolved, edit_mode=True)
+    p._modal._do_delete()  # internal method, skips dialog
+
+    assert repo.get_resolution(resolved["id"]) is None
+    assert deleted_callback == [True]
