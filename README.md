@@ -5,10 +5,10 @@ Single-user Windows desktop app for automating fingerprint attendance reporting.
 ## Run from source
 ```
 pip install -r requirements.txt
-python -m src.main
+python main.py
 ```
 
-> Run with `-m` from the project root so Python resolves the `src.*` package imports correctly.
+> The legacy `python -m src.main` invocation also still works (`src/main.py` is a thin shim that defers to root `main.py`).
 
 ## Build .exe
 See Phase 6 in `docs/superpowers/plans/2026-05-09-josaphat-tech-attendance.md`.
@@ -21,10 +21,12 @@ See `docs/superpowers/specs/2026-05-09-josaphat-tech-attendance-design.md`.
 After completing development setup (`pip install -r requirements.txt`):
 
 ```
-flet pack src/main.py --name "JosaphatTechHR" --icon assets/icon.ico --product-name "Josaphat Tech Solution HR Attendance Manager" --product-version "1.0.0"
+flet pack main.py --name "JosaphatTechHR" --icon assets/icon.ico --product-name "Josaphat Tech Solution HR Attendance Manager" --product-version "1.0.1"
 ```
 
 > Requires `pyinstaller` (install with `pip install pyinstaller` if not already present — `flet pack` invokes it under the hood).
+>
+> **Important:** Pack `main.py` from the project root, not `src/main.py`. The earlier path produced a broken bundle that crashed at startup with `ModuleNotFoundError: No module named 'src'`.
 
 Output: `dist/JosaphatTechHR.exe` (~80-120 MB).
 

@@ -1,34 +1,20 @@
-import flet as ft
+"""Compatibility shim — the entry point moved to project root `main.py`.
+
+PyInstaller / flet pack treats `src/main.py` as a top-level script, which
+broke `from src.X import Y` imports in the .exe build. The real entry is
+now `main.py` at the project root.
+
+This shim keeps `python -m src.main` working for anyone who memorized that
+command (Tasks 4 onward used it during development).
+"""
+import sys
 from pathlib import Path
-from src.core.settings_store import SettingsStore
-from src.db.repository import Repository
-from src.ui.shell import Shell
 
-ROOT = Path(__file__).parent.parent
-DATA_DIR = ROOT / "data"
-BACKUP_DIR = ROOT / "backups"
-CONFIG_PATH = ROOT / "config.json"
-DB_PATH = DATA_DIR / "app.db"
+# Add project root to sys.path so `import main` resolves
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-
-def main(page: ft.Page):
-    page.title = "Josaphat Tech Solution — HR Attendance Manager"
-    page.window.width = 1280
-    page.window.height = 800
-    page.padding = 0
-
-    DATA_DIR.mkdir(exist_ok=True)
-    BACKUP_DIR.mkdir(exist_ok=True)
-
-    settings = SettingsStore(str(CONFIG_PATH))
-    settings.load()
-
-    repo = Repository(str(DB_PATH))
-    repo.init_schema()
-
-    shell = Shell(page, settings, repo, str(BACKUP_DIR))
-    page.add(shell.build())
-
+import flet as ft  # noqa: E402
+from main import main  # noqa: E402
 
 if __name__ == "__main__":
     ft.app(target=main)

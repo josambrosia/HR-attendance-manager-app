@@ -21,11 +21,13 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-ENTRY_SCRIPT = PROJECT_ROOT / "src" / "main.py"
+# Pack root main.py, NOT src/main.py — packing the latter produces a broken
+# bundle that crashes at startup with "ModuleNotFoundError: No module named 'src'".
+ENTRY_SCRIPT = PROJECT_ROOT / "main.py"
 ICON = PROJECT_ROOT / "assets" / "icon.ico"
 OUTPUT_NAME = "JosaphatTechHR"
 PRODUCT_NAME = "Josaphat Tech Solution HR Attendance Manager"
-PRODUCT_VERSION = "1.0.0"
+PRODUCT_VERSION = "1.0.1"
 COPYRIGHT = "Josaphat Tech Solution"
 
 
