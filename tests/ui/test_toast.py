@@ -41,8 +41,8 @@ def notifier():
 
 def test_init_mounts_one_container_in_overlay(notifier):
     assert notifier.container in notifier.page.overlay
-    assert notifier.container.top == 80
-    assert notifier.container.right == 20
+    assert notifier.container.bottom == 20
+    assert notifier.container.left == 20
     assert notifier.container.width == 280
 
 

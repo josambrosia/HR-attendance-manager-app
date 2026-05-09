@@ -20,7 +20,7 @@ class ToastNotifier:
         self.page = page
         self.stack = ft.Column(spacing=8)
         self.container = ft.Container(
-            top=80, right=20, width=280,
+            bottom=20, left=20, width=280,
             content=self.stack,
         )
         page.overlay.append(self.container)
