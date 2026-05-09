@@ -26,6 +26,7 @@ class IssuesPage:
         self.end = self.start + timedelta(days=6)
         self.selected_record_id = None
         self.selected_reason = None
+        self._refresh_timer = None
 
     def build(self) -> ft.Control:
         self.list_view = ft.Column(scroll=ft.ScrollMode.AUTO, spacing=6, expand=True)
@@ -50,18 +51,37 @@ class IssuesPage:
             ]),
         )
 
+    def _period_label(self) -> str:
+        return f"{self.start.strftime('%d %b')} – {self.end.strftime('%d %b %Y')}"
+
     def _build_period_selector(self) -> ft.Control:
+        self.period_text = ft.Text(self._period_label(), size=13, weight=ft.FontWeight.W_600)
         return ft.Row(spacing=8, controls=[
             ft.IconButton(ft.Icons.CHEVRON_LEFT, on_click=lambda e: self._shift_week(-1)),
-            ft.Text(f"{self.start.strftime('%d %b')} – {self.end.strftime('%d %b %Y')}", size=13),
+            self.period_text,
             ft.IconButton(ft.Icons.CHEVRON_RIGHT, on_click=lambda e: self._shift_week(1)),
         ])
 
     def _shift_week(self, weeks: int):
         self.start += timedelta(weeks=weeks)
         self.end += timedelta(weeks=weeks)
-        self._refresh_list()
-        self.list_view.update()
+        self.period_text.value = self._period_label()
+        self.period_text.update()
+        self._schedule_refresh()
+
+    def _schedule_refresh(self, delay_ms: int = 200):
+        """Coalesce rapid ◀▶ clicks into a single DB query after delay."""
+        import threading
+        if hasattr(self, "_refresh_timer") and self._refresh_timer is not None:
+            self._refresh_timer.cancel()
+        def _do():
+            self._refresh_list()
+            try:
+                self.list_view.update()
+            except Exception:
+                pass  # may be unmounted by now — safe to ignore
+        self._refresh_timer = threading.Timer(delay_ms / 1000.0, _do)
+        self._refresh_timer.start()
 
     def _refresh_list(self):
         self.list_view.controls.clear()
