@@ -4,6 +4,8 @@ from src.core.constants import COLORS
 from src.core.settings_store import SettingsStore
 from src.db.repository import Repository
 from src.ui.components.logo import hexagon_j
+from src.ui.components.loading_overlay import LoadingOverlay
+from src.ui.components.toast import ToastNotifier
 from src.ui.pages import _placeholder
 
 NAV_GROUPS = [
@@ -49,6 +51,9 @@ class Shell:
         self._nav_buttons: dict[str, ft.Control] = {}
         # route -> built ft.Control (reuse on revisit; dropped on data change or theme toggle)
         self._page_cache: dict[str, ft.Control] = {}
+        # Singleton overlays mounted onto page.overlay; reusable across all pages
+        self._loading = LoadingOverlay(page)
+        self._toast = ToastNotifier(page)
         self._route_builders = self._init_route_builders()
 
     def _init_route_builders(self) -> dict:
@@ -289,3 +294,15 @@ class Shell:
             else:
                 self._page_cache[route] = builder()
         self.content_area.content = self._page_cache[route]
+
+    def show_loading(self, label: str) -> None:
+        self._loading.show(label)
+
+    def hide_loading(self) -> None:
+        self._loading.hide()
+
+    def notify(self, title: str, desc: str = "", kind: str = "success") -> None:
+        if kind == "error":
+            self._toast.error(title, desc)
+        else:
+            self._toast.success(title, desc)
