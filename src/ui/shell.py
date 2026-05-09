@@ -1,4 +1,5 @@
 import flet as ft
+from pathlib import Path
 from src.core.constants import COLORS
 from src.core.settings_store import SettingsStore
 from src.db.repository import Repository
@@ -51,6 +52,8 @@ class Shell:
                     builders[route] = self._build_edit_records_page
                 elif route == "dashboard":
                     builders[route] = self._build_dashboard_page
+                elif route == "weekly_report":
+                    builders[route] = self._build_weekly_report_page
                 else:
                     # Capture per-iteration via default args
                     builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
@@ -74,6 +77,12 @@ class Shell:
     def _build_dashboard_page(self) -> ft.Control:
         from src.ui.pages.dashboard import DashboardPage
         page_obj = DashboardPage(self.repo, self.settings, self.mode)
+        return page_obj.build()
+
+    def _build_weekly_report_page(self) -> ft.Control:
+        from src.ui.pages.weekly_report import WeeklyReportPage
+        exports_dir = Path(self.snapshot_dir).parent / "data" / "exports"
+        page_obj = WeeklyReportPage(self.repo, self.settings, str(exports_dir), self.mode)
         return page_obj.build()
 
     def build(self) -> ft.Control:
