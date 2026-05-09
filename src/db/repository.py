@@ -18,7 +18,12 @@ SCHEMA_PATH = _resolve_schema_path()
 class Repository:
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self.conn = sqlite3.connect(db_path)
+        # check_same_thread=False allows worker threads (used during Import,
+        # Export PDF/Excel, Backup, Restore, and Main DB async first-load) to
+        # access this connection. Safe in this app because the loading overlay's
+        # dim layer blocks all UI clicks during heavy ops, so the DB is never
+        # accessed concurrently from multiple threads.
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
 
