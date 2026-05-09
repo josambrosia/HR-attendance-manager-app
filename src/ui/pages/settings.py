@@ -151,6 +151,8 @@ class SettingsPage:
         self._set_status("Settings saved", ok=True)
         if self.on_data_changed:
             self.on_data_changed()
+        if self.notify:
+            self.notify("Settings disimpan")
 
     def _set_status(self, message: str, ok: bool):
         self.status_text.value = message
