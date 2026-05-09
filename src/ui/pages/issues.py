@@ -11,6 +11,46 @@ CASE_LABELS = {
     "F": ("Pulang Cepat", COLORS["pulang_cepat"]),
 }
 
+# AI suggestion text for each issue case
+_AI_SUGGESTIONS = {
+    "A": "Kemungkinan: Tidak Hadir, Cuti, atau Izin Sakit?",
+    "B": "Kemungkinan: Lupa Absen Masuk, atau Izin Pagi?",
+    "C": "Kemungkinan: Lupa Absen Pulang, atau Pulang Lebih Awal?",
+    "F": "Kemungkinan: Pulang Lebih Awal dengan alasan?",
+}
+
+# Grouping of reason codes into 4 categories for the modal UI
+_REASON_CATEGORIES = [
+    ("Tugas (di luar kantor)", [
+        ("tugas_lapangan", "Tugas Lapangan", "Field/site visit"),
+        ("tugas_paparan", "Tugas Paparan", "Presentasi luar"),
+    ]),
+    ("Cuti / Sakit / Izin", [
+        ("sakit", "Izin Sakit", "Sakit (tanpa input)"),
+        ("cuti", "Cuti", "Cuti tahunan / besar"),
+        ("izin_pagi", "Izin Pagi", "Datang siang, ada urusan"),
+        ("pulang_awal", "Pulang Lebih Awal", "Keluar dini, ada urusan"),
+    ]),
+    ("Telat / Lupa Absen", [
+        ("telat_kerja", "Masuk Terlambat (Pekerjaan)", "Krn meeting / urusan kerja"),
+        ("telat_personal", "Terlambat (personal)", "Telat tanpa alasan kerja"),
+        ("lupa_absen", "Lupa Absen", "+16 mnt penalty otomatis"),
+    ]),
+    ("Lain", [
+        ("belum_kabar", "Belum Ada Kabar", "Sementara, blm tau alasan"),
+        ("tidak_hadir", "Tidak Hadir", "Resmi tidak hadir"),
+    ]),
+]
+
+# Codes that require extra input
+_REASON_NEEDS_INPUT = {
+    "tugas_lapangan": "location",
+    "tugas_paparan": "location",
+    "izin_pagi": "reason_detail",
+    "pulang_awal": "reason_detail",
+    "telat_kerja": "reason_detail",
+}
+
 
 class IssuesPage:
     # Maps reason_code → friendly Indonesian label, used in resolution slot
@@ -401,8 +441,18 @@ class ResolveModal:
             style=ft.ButtonStyle(color=COLORS["late_severe"]),
         )
 
+        # AI banner widgets (mutable text)
+        self._ai_label = ft.Text("AI MENYARANKAN", size=11,
+                                  weight=ft.FontWeight.W_800,
+                                  color=COLORS["primary"], opacity=0.85)
+        self._ai_suggestion_text = ft.Text("", size=13)
+
+        # Reason cards keyed by code (built once, mounted in body)
+        self._reason_cards: dict[str, ft.Container] = {}
+
         # Body placeholder (Tasks 6-7 will fill this)
         self._body_placeholder = ft.Column(spacing=12, controls=[])
+        self._build_reason_cards_into_body()
 
         self._dialog = ft.Container(
             top=0, left=0, right=0, bottom=0,
@@ -473,6 +523,105 @@ class ResolveModal:
         )
         page.overlay.append(self._dialog)
 
+    def _build_reason_cards_into_body(self) -> None:
+        """Populate self._body_placeholder with AI banner + 4 categories."""
+        # AI banner (top of body)
+        ai_banner = ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=10),
+            border_radius=10,
+            bgcolor=f"{COLORS['primary']}1A",
+            border=ft.border.all(1, f"{COLORS['primary']}44"),
+            content=ft.Row(spacing=10,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            controls=[
+                ft.Container(
+                    width=32, height=32,
+                    border_radius=8,
+                    bgcolor=f"{COLORS['primary']}33",
+                    alignment=ft.alignment.center,
+                    content=ft.Text("🤖", size=16),
+                ),
+                ft.Column(spacing=2, controls=[
+                    self._ai_label,
+                    self._ai_suggestion_text,
+                ]),
+            ]),
+        )
+
+        body_label = ft.Text("PILIH ALASAN", size=11,
+                              weight=ft.FontWeight.W_800,
+                              color=COLORS["accent"],
+                              opacity=0.85)
+
+        category_widgets = []
+        for cat_name, codes_in_cat in _REASON_CATEGORIES:
+            cards_in_cat = []
+            for code, label, hint in codes_in_cat:
+                card = self._build_reason_card(code, label, hint)
+                self._reason_cards[code] = card
+                cards_in_cat.append(card)
+            category_widgets.append(ft.Container(
+                padding=ft.padding.symmetric(horizontal=12, vertical=10),
+                border_radius=10,
+                bgcolor=f"{COLORS['surface_dark']}80",
+                border=ft.border.all(1, f"{COLORS['accent']}33"),
+                content=ft.Column(spacing=8, controls=[
+                    ft.Text(cat_name.upper(), size=10,
+                            weight=ft.FontWeight.W_800,
+                            color=COLORS["accent"]),
+                    ft.GridView(
+                        runs_count=3,
+                        max_extent=220,
+                        spacing=8,
+                        run_spacing=8,
+                        child_aspect_ratio=2.4,
+                        controls=cards_in_cat,
+                    ),
+                ]),
+            ))
+
+        self._body_placeholder.controls = [
+            ai_banner,
+            body_label,
+            *category_widgets,
+        ]
+
+    def _build_reason_card(self, code: str, label: str, hint: str) -> ft.Container:
+        needs_input = code in _REASON_NEEDS_INPUT
+        return ft.Container(
+            padding=ft.padding.symmetric(horizontal=11, vertical=9),
+            border_radius=8,
+            bgcolor=f"{COLORS['primary']}1A",
+            border=ft.border.only(left=ft.BorderSide(2, f"{COLORS['primary']}55")),
+            on_click=lambda e, c=code: self._select_reason(c),
+            ink=True,
+            content=ft.Column(spacing=2, controls=[
+                ft.Text(
+                    f"{label}{' ✏️' if needs_input else ''}",
+                    size=12, weight=ft.FontWeight.W_700,
+                ),
+                ft.Text(hint, size=10, color=COLORS["accent"], opacity=0.75),
+            ]),
+        )
+
+    def _select_reason(self, code: str) -> None:
+        self._selected_reason = code
+        # Visual: highlight selected card, reset others
+        for c, card in self._reason_cards.items():
+            if c == code:
+                card.bgcolor = f"{COLORS['accent']}33"
+                card.border = ft.border.only(
+                    left=ft.BorderSide(3, COLORS["accent"]))
+            else:
+                card.bgcolor = f"{COLORS['primary']}1A"
+                card.border = ft.border.only(
+                    left=ft.BorderSide(2, f"{COLORS['primary']}55"))
+        # Tasks 7+: trigger extra-input visibility + save state + preview
+        try:
+            self._dialog.update()
+        except (AssertionError, AttributeError):
+            pass
+
     def open_for(self, issue: dict, edit_mode: bool = False) -> None:
         self._issue = issue
         self._edit_mode = edit_mode
@@ -487,6 +636,20 @@ class ResolveModal:
         in_val = issue.get("actual_in") or "kosong"
         out_val = issue.get("actual_out") or "kosong"
         self._summary_text.value = f"In: {in_val}     Out: {out_val}"
+
+        # Update AI banner suggestion based on issue case
+        self._ai_suggestion_text.value = _AI_SUGGESTIONS.get(
+            issue["issue_case"], "")
+        # Reset card highlight (clear previous open's selection state)
+        for code, card in self._reason_cards.items():
+            if code == self._selected_reason:
+                card.bgcolor = f"{COLORS['accent']}33"
+                card.border = ft.border.only(
+                    left=ft.BorderSide(3, COLORS["accent"]))
+            else:
+                card.bgcolor = f"{COLORS['primary']}1A"
+                card.border = ft.border.only(
+                    left=ft.BorderSide(2, f"{COLORS['primary']}55"))
 
         self._delete_btn.visible = edit_mode
         self._save_btn.text = "Update Resolution" if edit_mode else "Save Resolution"

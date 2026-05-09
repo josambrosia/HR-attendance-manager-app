@@ -159,3 +159,32 @@ def test_modal_close_hides_dialog(page_with_data):
     p._modal.open_for(issue)
     p._modal.close()
     assert p._modal._dialog.visible is False
+
+
+def test_modal_body_has_ai_banner_text_after_open(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue, edit_mode=False)
+    # AI banner suggestion text should mention something for case A
+    assert p._modal._ai_suggestion_text.value != ""
+    # Case A → suggestions include "Tidak Hadir" / "Cuti" / "Izin Sakit"
+    assert any(word in p._modal._ai_suggestion_text.value
+               for word in ("Tidak Hadir", "Cuti", "Izin Sakit"))
+
+
+def test_modal_has_11_reason_cards(page_with_data):
+    p, _ = page_with_data
+    assert len(p._modal._reason_cards) == 11
+
+
+def test_select_reason_marks_card_selected(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue, edit_mode=False)
+    p._modal._select_reason("cuti")
+    assert p._modal._selected_reason == "cuti"
+    assert p._modal._reason_cards["cuti"].border.left.color == COLORS["accent"]
