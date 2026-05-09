@@ -20,7 +20,7 @@ class ToastNotifier:
         self.page = page
         self.stack = ft.Column(spacing=8)
         self.container = ft.Container(
-            bottom=20, left=20, width=280,
+            top=20, right=20, width=360,
             content=self.stack,
         )
         page.overlay.append(self.container)
@@ -49,11 +49,14 @@ class ToastNotifier:
 
     def _build_toast(self, title: str, desc: str,
                      color: str, icon: str) -> ft.Container:
+        # max_lines=None + selectable=False allows multi-line wrap so long error
+        # messages don't get clipped. expand=True on the inner Column lets text
+        # consume the remaining width inside the 360px container.
         body_controls = [ft.Text(title, size=13, weight=ft.FontWeight.W_700,
-                                  color=COLORS["text_dark"])]
+                                  color=COLORS["text_dark"], max_lines=2)]
         if desc:
             body_controls.append(ft.Text(desc, size=11, opacity=0.8,
-                                          color=COLORS["text_dark"]))
+                                          color=COLORS["text_dark"], max_lines=4))
 
         return ft.Container(
             bgcolor=f"{COLORS['surface_dark']}D1",  # ~82% alpha
@@ -62,10 +65,10 @@ class ToastNotifier:
             padding=ft.padding.symmetric(horizontal=14, vertical=10),
             content=ft.Row(
                 spacing=10,
-                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.START,
                 controls=[
                     ft.Text(icon, size=16),
-                    ft.Column(spacing=2, controls=body_controls),
+                    ft.Column(spacing=2, controls=body_controls, expand=True),
                 ],
             ),
         )
