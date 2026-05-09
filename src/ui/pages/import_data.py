@@ -1,4 +1,5 @@
 import flet as ft
+import threading
 from pathlib import Path
 from src.core.parser import parse_xls
 from src.core.conflict import resolve_import, detect_conflicts, ConflictPolicy
@@ -127,24 +128,46 @@ class ImportDataPage:
         self.action_row.update()
 
     def _do_import(self, policy: ConflictPolicy):
-        summary = resolve_import(
-            self.repo, self.parsed_records, Path(self.selected_file).name,
-            snapshot_dir=self.snapshot_dir, policy=policy,
-            settings=self.settings.load(),
-        )
-        parts = [
-            f"{summary['inserted']} new",
-            f"{summary['kept']} kept",
-            f"{summary['overwritten']} overwritten",
-        ]
-        if summary.get("preserved_resolved", 0) > 0:
-            parts.append(f"{summary['preserved_resolved']} preserved (resolved)")
-        msg = "✅ Import done · " + " · ".join(parts)
-        self.status_text.value = msg
-        self.status_text.update()
-        self._reset_after_success()
-        if self.on_data_changed:
-            self.on_data_changed()
+        filename = Path(self.selected_file).name
+        records = list(self.parsed_records)  # snapshot — _reset_after_success will clear
+        if self.show_loading:
+            self.show_loading(f"📥 Sedang import {filename}...")
+
+        def work():
+            try:
+                summary = resolve_import(
+                    self.repo, records, filename,
+                    snapshot_dir=self.snapshot_dir, policy=policy,
+                    settings=self.settings.load(),
+                )
+                parts = [
+                    f"{summary['inserted']} new",
+                    f"{summary['kept']} kept",
+                    f"{summary['overwritten']} overwritten",
+                ]
+                if summary.get("preserved_resolved", 0) > 0:
+                    parts.append(f"{summary['preserved_resolved']} preserved (resolved)")
+                msg = "✅ Import done · " + " · ".join(parts)
+
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = msg
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                self._reset_after_success()
+                if self.on_data_changed:
+                    self.on_data_changed()
+                if self.notify:
+                    self.notify("Import berhasil", " · ".join(parts))
+            except Exception as ex:
+                if self.hide_loading:
+                    self.hide_loading()
+                if self.notify:
+                    self.notify("Import gagal", str(ex)[:80], kind="error")
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _reset(self):
         self.parsed_records = []
