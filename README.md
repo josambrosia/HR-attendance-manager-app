@@ -33,3 +33,10 @@ Copy this single file to any Windows machine — no Python install needed. The a
 ## Backup for Laptop Migration
 
 In-app: Backup/Restore page → Export ZIP → save to USB / cloud drive. On the new laptop, run the .exe once (creates empty data folder), then Backup/Restore → Import ZIP → restart app.
+
+## Custom Logo
+
+To replace the placeholder Hex J logo with your real brand:
+- Save your SVG as `assets/logo-custom.svg` (in the same folder as the .exe).
+- Restart the app — the new logo will appear in the PDF report footer.
+- The built-in placeholder remains as fallback if `logo-custom.svg` is missing.

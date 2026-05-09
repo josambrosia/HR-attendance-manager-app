@@ -82,7 +82,8 @@ class Shell:
 
     def _build_dashboard_page(self) -> ft.Control:
         from src.ui.pages.dashboard import DashboardPage
-        page_obj = DashboardPage(self.repo, self.settings, self.mode)
+        page_obj = DashboardPage(self.repo, self.settings, self.mode,
+                                 nav_callback=self._navigate)
         return page_obj.build()
 
     def _build_weekly_report_page(self) -> ft.Control:

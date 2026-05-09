@@ -17,7 +17,6 @@ GROUPS = [
     ("Sections", [
         ("section_coaching", "Coaching Required (detail cards)", True),
         ("section_hall", "Hall of Late ranking", True),
-        ("section_per_employee", "Per-employee breakdown", False),
     ]),
 ]
 
@@ -50,7 +49,6 @@ def show_checklist_modal(page: ft.Page, title: str, on_generate, include_monthly
         )
         for key, label, default in [
             ("monthly_excel_sheets_format", "Excel format 1:1 with Google Sheets", True),
-            ("monthly_dept_breakdown", "Department breakdown", False),
         ]:
             cb = ft.Checkbox(label=label, value=default)
             checkboxes[key] = cb

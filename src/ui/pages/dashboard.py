@@ -15,13 +15,19 @@ from src.core.settings_store import SettingsStore
 
 
 class DashboardPage:
-    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark"):
+    def __init__(self, repo: Repository, settings: SettingsStore, mode: str = "dark",
+                 nav_callback=None):
         self.repo = repo
         self.settings = settings
         self.mode = mode
+        self.nav_callback = nav_callback
         today = date.today()
         self.start = today - timedelta(days=today.weekday())
         self.end = self.start + timedelta(days=6)
+
+    def _show_snack(self, page, msg):
+        page.snack_bar = ft.SnackBar(ft.Text(msg), open=True)
+        page.update()
 
     def build(self) -> ft.Control:
         coaching_thr = self.settings.get("coaching_threshold_minutes", 75)
@@ -84,10 +90,14 @@ class DashboardPage:
                             size=13, opacity=0.7),
                 ]),
                 ft.Container(expand=True),
-                ft.ElevatedButton("📤 Export Weekly", on_click=lambda e: None,
-                                  bgcolor=COLORS["primary"], color="white"),
-                ft.ElevatedButton("📆 Export Monthly", on_click=lambda e: None,
-                                  bgcolor=COLORS["accent"], color="white"),
+                ft.ElevatedButton(
+                    "📤 Export Weekly",
+                    on_click=lambda e: self.nav_callback("weekly_report") if self.nav_callback else None,
+                    bgcolor=COLORS["primary"], color="white"),
+                ft.ElevatedButton(
+                    "📆 Export Monthly",
+                    on_click=lambda e: self.nav_callback("monthly_report") if self.nav_callback else None,
+                    bgcolor=COLORS["accent"], color="white"),
             ]),
         )
 
@@ -169,12 +179,21 @@ class DashboardPage:
                                 size=11, opacity=0.7),
                     ]),
                     ft.Container(expand=True),
-                    ft.IconButton(ft.Icons.OPEN_IN_FULL, tooltip="Show All Employees",
-                                  on_click=lambda e: None),
-                    ft.IconButton(ft.Icons.PICTURE_AS_PDF, tooltip="Export PDF",
-                                  on_click=lambda e: None),
-                    ft.IconButton(ft.Icons.TABLE_CHART, tooltip="Export Excel",
-                                  on_click=lambda e: None),
+                    ft.IconButton(
+                        ft.Icons.OPEN_IN_FULL, tooltip="Show All Employees",
+                        on_click=lambda e: self._show_snack(
+                            e.page,
+                            "Open Weekly Report page from sidebar to access Hall of Late exports")),
+                    ft.IconButton(
+                        ft.Icons.PICTURE_AS_PDF, tooltip="Export PDF",
+                        on_click=lambda e: self._show_snack(
+                            e.page,
+                            "Use the Weekly/Monthly Report page to export.")),
+                    ft.IconButton(
+                        ft.Icons.TABLE_CHART, tooltip="Export Excel",
+                        on_click=lambda e: self._show_snack(
+                            e.page,
+                            "Use the Weekly/Monthly Report page to export.")),
                 ]),
                 ft.Column(spacing=8, controls=rows),
             ]),

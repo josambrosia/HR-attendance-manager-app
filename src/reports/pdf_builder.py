@@ -9,7 +9,13 @@ from svglib.svglib import svg2rlg
 from src.core.constants import COLORS
 
 ROOT = Path(__file__).parent.parent.parent
-LOGO_PATH = ROOT / "assets" / "logo.svg"
+LOGO_BUILTIN = ROOT / "assets" / "logo.svg"
+LOGO_CUSTOM = ROOT / "assets" / "logo-custom.svg"
+
+
+def _resolve_logo_path():
+    """Prefer user-provided custom logo; fallback to built-in placeholder."""
+    return LOGO_CUSTOM if LOGO_CUSTOM.exists() else LOGO_BUILTIN
 
 PURPLE = colors.HexColor(COLORS["primary"])
 PINK = colors.HexColor(COLORS["accent"])
@@ -65,9 +71,10 @@ class PdfReportBuilder:
         # Powered by line - centered at bottom
         footer_y = 12 * mm
         # logo
-        if LOGO_PATH.exists():
+        logo_path = _resolve_logo_path()
+        if logo_path.exists():
             try:
-                drawing = svg2rlg(str(LOGO_PATH))
+                drawing = svg2rlg(str(logo_path))
                 if drawing:
                     scale = (5 * mm) / drawing.width
                     drawing.width *= scale
