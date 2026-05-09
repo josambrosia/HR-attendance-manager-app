@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Issues Page Redesign — Compact + Auto-Recommendation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #1a0b2e; color: #e9d5ff; padding: 0; min-height: 100vh;
+  }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 20px; }
+  .col { background: #2d1b4e; border-radius: 12px; padding: 18px; border: 1px solid #4c1d95; }
+  .col-title { font-size: 14px; font-weight: 700; color: #F472B6; margin-bottom: 4px; }
+  .col-sub { font-size: 11px; opacity: 0.6; margin-bottom: 16px; }
+  .col-old { opacity: 0.7; }
+  .col-new { border-color: #F472B6; }
+
+  /* OLD layout */
+  .old-card {
+    padding: 12px; border-radius: 8px; margin-bottom: 6px;
+    background: rgba(252,211,77,0.10); border: 1px solid rgba(252,211,77,0.4);
+    border-left: 4px solid #FCD34D;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .old-card .name { font-weight: 700; font-size: 14px; }
+  .old-card .meta { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .old-card .badge {
+    margin-left: auto; padding: 4px 10px; border-radius: 12px;
+    background: #FCD34D; color: #422006; font-size: 11px; font-weight: 600;
+  }
+  .old-flex { flex: 1; }
+
+  /* NEW layout */
+  .new-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; background: rgba(167,139,250,0.08); border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .new-toolbar .nav { display: flex; align-items: center; gap: 8px; }
+  .new-toolbar .nav-btn {
+    width: 28px; height: 28px; border-radius: 6px; background: rgba(167,139,250,0.15);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    color: #DDD6FE; font-size: 14px;
+  }
+  .period-label { font-size: 13px; font-weight: 600; color: #f5f3ff; }
+  .count-pill {
+    padding: 3px 10px; border-radius: 999px; background: rgba(244,114,182,0.2);
+    color: #F9A8D4; font-size: 11px; font-weight: 700;
+  }
+
+  .new-card {
+    padding: 10px 12px; border-radius: 6px; margin-bottom: 4px;
+    background: rgba(252,211,77,0.08); border-left: 3px solid #FCD34D;
+    display: grid; grid-template-columns: 110px 1fr 200px 100px; gap: 12px;
+    align-items: center;
+  }
+  .new-card.severe { background: rgba(248,113,113,0.10); border-left-color: #F87171; }
+  .new-card.early  { background: rgba(192,132,252,0.10); border-left-color: #C084FC; }
+
+  .new-card .who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .new-card .name { font-weight: 700; font-size: 13px; color: #f5f3ff; }
+  .new-card .date { font-size: 10px; opacity: 0.65; }
+
+  .new-card .detail {
+    font-size: 11px; color: #C4B5FD; font-family: 'Courier New', monospace;
+  }
+  .new-card .detail span.x { color: #F87171; }
+  .new-card .detail span.ok { color: #6EE7B7; }
+
+  .new-card .recommendation {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px;
+  }
+  .new-card .ai-badge {
+    padding: 2px 6px; border-radius: 4px; background: rgba(96,165,250,0.2);
+    color: #93C5FD; font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+  }
+  .new-card .ai-text { color: #DDD6FE; opacity: 0.8; }
+
+  .new-card .case-badge {
+    padding: 4px 8px; border-radius: 10px; font-size: 10px;
+    font-weight: 600; text-align: center;
+    background: #FCD34D; color: #422006;
+  }
+  .new-card.severe .case-badge { background: #F87171; color: white; }
+  .new-card.early .case-badge { background: #C084FC; color: white; }
+
+  /* RESOLVE PANEL — old vs new */
+  .resolve-section { margin-top: 24px; }
+  .resolve-section h3 { font-size: 13px; color: #F472B6; margin-bottom: 8px; font-weight: 700; }
+
+  .old-resolve {
+    background: #2d1b4e; padding: 16px; border-radius: 8px;
+    border: 1px solid #4c1d95; max-height: 380px; overflow: auto;
+  }
+  .old-resolve h4 { font-size: 14px; margin-bottom: 8px; }
+  .old-resolve .opt {
+    padding: 8px 10px; border-radius: 5px; font-size: 12px;
+    color: #DDD6FE; cursor: pointer;
+  }
+  .old-resolve .opt:hover { background: rgba(167,139,250,0.1); }
+  .old-resolve .opt.active { background: rgba(124,58,237,0.25); color: #f5f3ff; font-weight: 600; }
+
+  .new-resolve {
+    background: #2d1b4e; padding: 14px; border-radius: 10px;
+    border: 1.5px solid rgba(244,114,182,0.4);
+  }
+  .new-resolve-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 10px; border-bottom: 1px dashed rgba(167,139,250,0.3);
+    margin-bottom: 12px;
+  }
+  .new-resolve-head .who { font-size: 14px; font-weight: 700; }
+  .new-resolve-head .meta { font-size: 11px; opacity: 0.7; }
+
+  .recommended-block {
+    background: rgba(96,165,250,0.10); border: 1px dashed rgba(96,165,250,0.5);
+    padding: 10px 12px; border-radius: 6px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .recommended-block .robot-icon { font-size: 18px; }
+  .recommended-block .rec-text {
+    flex: 1; font-size: 11px; color: #DDD6FE;
+  }
+  .recommended-block .rec-text strong { color: #93C5FD; }
+  .recommended-block .apply-btn {
+    padding: 4px 10px; background: rgba(96,165,250,0.3); color: #BFDBFE;
+    border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer;
+  }
+
+  .opts-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;
+  }
+  .opt-card {
+    padding: 8px 10px; border-radius: 6px; font-size: 12px;
+    background: rgba(167,139,250,0.08); border: 1px solid transparent;
+    cursor: pointer; color: #DDD6FE;
+  }
+  .opt-card:hover { background: rgba(167,139,250,0.18); }
+  .opt-card.active { border-color: #F472B6; background: rgba(244,114,182,0.18); color: #f5f3ff; font-weight: 600; }
+  .opt-card.new-flag { position: relative; }
+  .opt-card.new-flag::after {
+    content: 'NEW'; position: absolute; top: -6px; right: -6px;
+    background: #F472B6; color: white; font-size: 8px; padding: 1px 5px; border-radius: 999px; font-weight: 700;
+  }
+
+  .extra-input-block {
+    margin-top: 12px; padding: 10px 12px;
+    background: rgba(124,58,237,0.10); border-radius: 6px;
+    border-left: 3px solid #7C3AED;
+  }
+  .extra-input-block .label {
+    font-size: 10px; opacity: 0.7; margin-bottom: 4px;
+    text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;
+  }
+  .extra-input-block input {
+    width: 100%; background: #1a0b2e; border: 1px solid #4c1d95; color: #f5f3ff;
+    padding: 8px 10px; border-radius: 4px; font-size: 13px;
+  }
+  .extra-input-block .preview {
+    font-size: 10px; opacity: 0.6; margin-top: 6px; font-style: italic;
+  }
+
+  .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-primary {
+    padding: 8px 16px; background: #34D399; color: white;
+    border-radius: 6px; font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  .btn-text { padding: 8px 12px; color: #DDD6FE; font-size: 13px; cursor: pointer; }
+
+  .change-list {
+    background: #2d1b4e; border-radius: 12px; padding: 18px; border: 1px solid #4c1d95;
+    margin: 20px 24px;
+  }
+  .change-list h2 { font-size: 14px; color: #F472B6; margin-bottom: 12px; font-weight: 800; }
+  .change-list ul { list-style: none; }
+  .change-list li {
+    padding: 8px 0; font-size: 13px; border-bottom: 1px solid rgba(167,139,250,0.1);
+    display: flex; gap: 10px;
+  }
+  .change-list li:last-child { border: none; }
+  .check { color: #34D399; font-weight: 700; }
+  .new-tag { background: #F472B6; color: white; font-size: 9px; padding: 2px 6px; border-radius: 999px; margin-right: 6px; vertical-align: middle; font-weight: 700; }
+
+</style>
+</head>
+<body>
+
+<div style="padding: 20px;">
+  <h1 style="font-size: 22px; font-weight: 800; margin-bottom: 4px;">Issues Page — Old vs New</h1>
+  <p style="font-size: 13px; opacity: 0.7;">Same data, redesigned for compactness + auto-recommendation + bigger resolve box</p>
+</div>
+
+<!-- TOOLBAR (NEW only — old just has chevrons) -->
+<div style="padding: 0 20px;">
+  <div class="new-toolbar">
+    <div class="nav">
+      <span class="nav-btn">◀</span>
+      <span class="period-label">06 Apr – 12 Apr 2026</span>
+      <span class="nav-btn">▶</span>
+      <span class="nav-btn" style="margin-left:8px;">📅</span>
+    </div>
+    <div style="display:flex; gap:10px; align-items: center;">
+      <span class="count-pill">9 pending</span>
+      <span style="font-size: 11px; opacity: 0.6;">Click ▶ → debounced query (no UI freeze)</span>
+    </div>
+  </div>
+</div>
+
+<div class="compare">
+
+  <!-- OLD -->
+  <div class="col col-old">
+    <div class="col-title">BEFORE — current layout</div>
+    <div class="col-sub">Wide cards, lots of empty space, no auto-recommendation, no detail</div>
+
+    <div class="old-card">
+      <div class="old-flex">
+        <div class="name">ANSHORI</div>
+        <div class="meta">2026-04-06 · Senin</div>
+      </div>
+      <span class="badge" style="background:#F87171;color:white;">Tidak Hadir</span>
+    </div>
+    <div class="old-card">
+      <div class="old-flex">
+        <div class="name">MUSTOFA</div>
+        <div class="meta">2026-04-06 · Senin</div>
+      </div>
+      <span class="badge">Lupa Absen Pulang</span>
+    </div>
+    <div class="old-card">
+      <div class="old-flex">
+        <div class="name">RASYID</div>
+        <div class="meta">2026-04-06 · Senin</div>
+      </div>
+      <span class="badge">Lupa Absen Masuk</span>
+    </div>
+    <div class="old-card">
+      <div class="old-flex">
+        <div class="name">DEWI</div>
+        <div class="meta">2026-04-06 · Senin</div>
+      </div>
+      <span class="badge" style="background:#C084FC;color:white;">Pulang Cepat</span>
+    </div>
+
+    <div class="resolve-section">
+      <h3>Resolve panel (current)</h3>
+      <div class="old-resolve">
+        <h4>Resolve Issue</h4>
+        <div style="font-size:11px;opacity:0.7;margin-bottom:10px;">MUSTOFA · 2026-04-06</div>
+        <div style="font-size:11px;font-weight:600;margin-bottom:6px;">Pilih alasan:</div>
+        <div class="opt">Tugas Lapangan</div>
+        <div class="opt">Tugas Paparan</div>
+        <div class="opt">Izin Sakit</div>
+        <div class="opt">Cuti</div>
+        <div class="opt">Izin Pagi</div>
+        <div class="opt active">Pulang Lebih Awal</div>
+        <div class="opt">Masuk Terlambat dengan Alasan Pekerjaan</div>
+        <div class="opt">Terlambat</div>
+        <div class="opt">Lupa Absen (terhitung telat 16 menit)</div>
+        <div class="opt">Belum Ada Kabar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW -->
+  <div class="col col-new">
+    <div class="col-title">AFTER — redesigned</div>
+    <div class="col-sub">Compact rows, issue detail visible, AI recommendation, 2-column option grid, bigger inputs</div>
+
+    <div class="new-card severe">
+      <div class="who">
+        <div class="name">ANSHORI</div>
+        <div class="date">2026-04-06 · Senin · Hari Kerja</div>
+      </div>
+      <div class="detail">
+        Masuk: <span class="x">— kosong</span><br>
+        Keluar: <span class="x">— kosong</span>
+      </div>
+      <div class="recommendation">
+        <span class="ai-badge">AI</span>
+        <span class="ai-text">→ Tidak Hadir / Cuti / Sakit?</span>
+      </div>
+      <span class="case-badge">Tidak Hadir<br>(case A)</span>
+    </div>
+
+    <div class="new-card">
+      <div class="who">
+        <div class="name">MUSTOFA</div>
+        <div class="date">2026-04-06 · Senin · Hari Kerja</div>
+      </div>
+      <div class="detail">
+        Masuk: <span class="ok">08:14</span><br>
+        Keluar: <span class="x">— kosong</span>
+      </div>
+      <div class="recommendation">
+        <span class="ai-badge">AI</span>
+        <span class="ai-text">→ Lupa Absen Pulang / Pulang Lebih Awal?</span>
+      </div>
+      <span class="case-badge">Lupa Absen<br>Pulang (case C)</span>
+    </div>
+
+    <div class="new-card">
+      <div class="who">
+        <div class="name">RASYID</div>
+        <div class="date">2026-04-06 · Senin · Hari Kerja</div>
+      </div>
+      <div class="detail">
+        Masuk: <span class="x">— kosong</span><br>
+        Keluar: <span class="ok">19:00</span>
+      </div>
+      <div class="recommendation">
+        <span class="ai-badge">AI</span>
+        <span class="ai-text">→ Izin Pagi / Lupa Absen Masuk?</span>
+      </div>
+      <span class="case-badge">Lupa Absen<br>Masuk (case B)</span>
+    </div>
+
+    <div class="new-card early">
+      <div class="who">
+        <div class="name">DEWI</div>
+        <div class="date">2026-04-06 · Senin · Hari Kerja</div>
+      </div>
+      <div class="detail">
+        Masuk: <span class="ok">08:00</span><br>
+        Keluar: <span class="ok">14:30</span> <span style="color:#FBA74E;">(-90 mnt)</span>
+      </div>
+      <div class="recommendation">
+        <span class="ai-badge">AI</span>
+        <span class="ai-text">→ Pulang Lebih Awal?</span>
+      </div>
+      <span class="case-badge">Pulang Cepat<br>(case F)</span>
+    </div>
+
+    <div class="resolve-section">
+      <h3>Resolve panel (redesigned)</h3>
+      <div class="new-resolve">
+        <div class="new-resolve-head">
+          <div>
+            <div class="who">MUSTOFA</div>
+            <div class="meta">06 Apr 2026 · Senin · Lupa Absen Pulang (case C)</div>
+          </div>
+          <span class="case-badge" style="background:#FCD34D;color:#422006;padding:5px 10px;">case C</span>
+        </div>
+
+        <div class="recommended-block">
+          <span class="robot-icon">🤖</span>
+          <div class="rec-text">
+            <strong>Recommendation:</strong> Karyawan absen Masuk 08:14 tapi tidak absen Keluar.<br>
+            Kemungkinan besar: <strong>Lupa Absen Pulang</strong> atau <strong>Pulang Lebih Awal</strong>.
+          </div>
+          <span class="apply-btn">Apply</span>
+        </div>
+
+        <div style="font-size:11px;font-weight:600;margin-bottom:8px;color:#A78BFA;text-transform:uppercase;letter-spacing:0.05em;">
+          Pilih alasan (manual override):
+        </div>
+        <div class="opts-grid">
+          <div class="opt-card">Tugas Lapangan</div>
+          <div class="opt-card">Tugas Paparan</div>
+          <div class="opt-card">Izin Sakit</div>
+          <div class="opt-card">Cuti</div>
+          <div class="opt-card">Izin Pagi</div>
+          <div class="opt-card active">Pulang Lebih Awal</div>
+          <div class="opt-card">Masuk Telat (Alasan Kerja)</div>
+          <div class="opt-card">Terlambat</div>
+          <div class="opt-card">Lupa Absen (+16 mnt)</div>
+          <div class="opt-card">Belum Ada Kabar</div>
+          <div class="opt-card new-flag">Tidak Hadir</div>
+        </div>
+
+        <div class="extra-input-block">
+          <div class="label">Alasan / Detail</div>
+          <input type="text" value="anak sakit harus dijemput sekolah" placeholder="Cth: anak sakit, urus dokumen, dll">
+          <div class="preview">→ Akan tertulis di Main DB sebagai: <strong>"Pulang Lebih Awal - anak sakit harus dijemput sekolah"</strong></div>
+        </div>
+
+        <div class="actions">
+          <span class="btn-primary">💾 Save</span>
+          <span class="btn-text">Cancel</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CHANGE LIST -->
+<div class="change-list">
+  <h2>📋 Specific Changes</h2>
+  <ul>
+    <li><span class="check">✓</span><div><strong>BUG FIX</strong> — Period text now stays in sync with actual filter (store reference, update on shift)</div></li>
+    <li><span class="check">✓</span><div><strong>PERFORMANCE</strong> — Click ◀▶ debounced + only refresh list (not full shell rebuild)</div></li>
+    <li><span class="check">✓</span><div><strong>COMPACT</strong> — Card padding 12px → 10px, height ~72px → ~50px, 2x more issues per screen</div></li>
+    <li><span class="check">✓</span><div><strong>DETAIL</strong> — Show actual Masuk/Keluar values + delta (e.g. "-90 mnt" for Pulang Cepat)</div></li>
+    <li><span class="check">✓</span><div><strong>AUTO-RECOMMENDATION</strong> — Blue "AI" badge inline; full reasoning in resolve panel with 1-click "Apply"</div></li>
+    <li><span class="check">✓</span><div><strong>RESOLVE GRID</strong> — Options in 2-col grid (was single column), takes 50% less vertical space</div></li>
+    <li><span class="check">✓</span><div><strong>BIGGER INPUTS</strong> — Extra input field full-width with live preview of what will appear in Main DB</div></li>
+    <li><span class="check">✓</span><div><span class="new-tag">NEW</span><strong>"Tidak Hadir" option</strong> — 11th resolution code, distinct from "Belum Ada Kabar"</div></li>
+    <li><span class="check">✓</span><div><strong>HEADER TOOLBAR</strong> — Period label + count pill + jump-to-month picker (📅), separate from issue list scroll</div></li>
+  </ul>
+</div>
+
+</body>
+</html>

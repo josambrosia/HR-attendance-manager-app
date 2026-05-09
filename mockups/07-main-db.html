@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Main Database — Monthly Recap (matches Sheets format)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #1a0b2e; color: #e9d5ff; padding: 0; min-height: 100vh;
+  }
+  .header {
+    padding: 20px 24px; border-bottom: 1px solid #4c1d95;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    background: #2d1b4e;
+  }
+  .title { font-size: 24px; font-weight: 800; }
+  .subtitle { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+  .toolbar {
+    padding: 14px 24px;
+    background: rgba(167,139,250,0.05);
+    display: flex; gap: 16px; align-items: center;
+    border-bottom: 1px solid rgba(76,29,149,0.5);
+  }
+  .nav-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(167,139,250,0.15);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #DDD6FE; font-size: 14px;
+  }
+  .month-label {
+    font-size: 16px; font-weight: 700; color: #f5f3ff;
+    padding: 4px 12px;
+  }
+  .filter {
+    background: #2d1b4e; border: 1px solid #4c1d95; color: #DDD6FE;
+    padding: 6px 10px; border-radius: 6px; font-size: 12px;
+  }
+  .stats {
+    margin-left: auto; display: flex; gap: 12px; align-items: center;
+    font-size: 12px;
+  }
+  .stat-pill {
+    padding: 4px 10px; border-radius: 999px; background: rgba(244,114,182,0.15);
+    color: #F9A8D4; font-weight: 600;
+  }
+  .stat-pill.warn { background: rgba(252,211,77,0.18); color: #FCD34D; }
+  .stat-pill.green { background: rgba(52,211,153,0.18); color: #6EE7B7; }
+  .btn {
+    padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-primary { background: #7C3AED; color: white; }
+  .btn-secondary { background: rgba(167,139,250,0.15); color: #DDD6FE; }
+
+  /* TABLE container with sticky scroll */
+  .table-wrap {
+    max-height: calc(100vh - 230px); overflow: auto;
+    border-bottom: 1px solid #4c1d95;
+  }
+  table { border-collapse: collapse; width: max-content; min-width: 100%; }
+  th, td {
+    border-right: 1px solid rgba(76,29,149,0.4);
+    border-bottom: 1px solid rgba(76,29,149,0.4);
+    padding: 6px 10px; font-size: 11px; text-align: left;
+    white-space: nowrap; vertical-align: middle;
+  }
+
+  thead th {
+    background: #2d1b4e; color: #F472B6;
+    font-weight: 700; text-transform: uppercase; font-size: 10px;
+    letter-spacing: 0.05em; position: sticky; top: 0; z-index: 2;
+  }
+  thead th.unit { font-size: 9px; opacity: 0.5; font-weight: 500;
+                  text-transform: none; letter-spacing: 0; top: 30px; }
+
+  /* Sticky first 2 columns */
+  th:nth-child(1), td:nth-child(1) { position: sticky; left: 0; background: #2d1b4e; z-index: 1; }
+  th:nth-child(2), td:nth-child(2) { position: sticky; left: 80px; background: #2d1b4e; z-index: 1; }
+  thead th:nth-child(1), thead th:nth-child(2) { z-index: 3; }
+
+  /* Row variants */
+  tr.work td { color: #DDD6FE; }
+  tr.istirahat td { background: rgba(167,139,250,0.04); color: #A78BFA; opacity: 0.5; }
+  tr.istirahat td:nth-child(1), tr.istirahat td:nth-child(2) { background: #2a1a4a; }
+  tr.empty td { color: rgba(167,139,250,0.4); font-style: italic; }
+  tr.empty td:nth-child(1), tr.empty td:nth-child(2) { color: #DDD6FE; font-style: normal; }
+  tr.total td {
+    background: rgba(244,114,182,0.08); color: #F9A8D4; font-weight: 700;
+    border-top: 2px solid rgba(244,114,182,0.4);
+  }
+  tr.total td:nth-child(1), tr.total td:nth-child(2) { background: rgba(244,114,182,0.15); }
+
+  td.editable {
+    cursor: cell; transition: background 0.1s;
+  }
+  td.editable:hover { background: rgba(244,114,182,0.10); outline: 1px dashed #F472B6; }
+
+  td.late-mild { color: #FCD34D; font-weight: 600; }
+  td.late-severe { color: #F87171; font-weight: 700; }
+  td.early { color: #C084FC; font-weight: 600; }
+  td.lupa { color: #93C5FD; }
+  td.alasan { color: #6EE7B7; font-style: italic; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+  td.alasan-empty { color: rgba(167,139,250,0.3); font-style: italic; }
+
+  td.name-cell { font-weight: 700; color: #f5f3ff; }
+  td.date-cell { color: #C4B5FD; font-family: 'Courier New', monospace; }
+
+  /* Footer / legend */
+  .legend {
+    padding: 12px 24px; background: #2d1b4e;
+    display: flex; gap: 18px; flex-wrap: wrap;
+    font-size: 11px; opacity: 0.85; border-top: 1px solid rgba(76,29,149,0.4);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+
+  /* Modal preview placeholder */
+  .info-banner {
+    margin: 12px 24px; padding: 10px 14px;
+    background: rgba(96,165,250,0.10);
+    border: 1px dashed rgba(96,165,250,0.5);
+    border-radius: 8px; font-size: 12px; color: #BFDBFE;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .info-banner .icon { font-size: 18px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="title">📊 Main Database</div>
+    <div class="subtitle">Monthly attendance recap · matches your Google Sheets format 1:1 (17 columns)</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <span class="btn btn-secondary">📥 Export to .xlsx</span>
+    <span class="btn btn-secondary">📋 Copy as TSV (paste to Sheets)</span>
+    <span class="btn btn-primary">⚠️ 4 conflicts to resolve</span>
+  </div>
+</div>
+
+<div class="toolbar">
+  <div style="display:flex;align-items:center;gap:6px;">
+    <span class="nav-btn">◀</span>
+    <span class="month-label">April 2026</span>
+    <span class="nav-btn">▶</span>
+  </div>
+  <select class="filter">
+    <option>All employees (32)</option>
+    <option>ANDIKA</option>
+    <option>ESA</option>
+    <option>TOMBAK</option>
+  </select>
+  <select class="filter">
+    <option>All departments</option>
+    <option>ARGA DIRGA</option>
+  </select>
+  <div class="stats">
+    <span class="stat-pill green">✅ 142 resolved</span>
+    <span class="stat-pill warn">⚠️ 8 pending</span>
+    <span class="stat-pill">📅 W3-W4 not yet imported</span>
+  </div>
+</div>
+
+<div class="info-banner">
+  <span class="icon">💡</span>
+  <div>
+    <strong>Skeleton rows for not-yet-imported days are shown italic & greyed.</strong>
+    Format ready — just import this week's .xls and they'll fill in automatically.
+    Click any cell to edit inline. Conflicts (same date imported 2x) will pop the resolve dialog.
+  </div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>Nama</th><th>Dept.</th><th>Tanggal</th><th>Hari</th><th>Tipe</th>
+      <th>Jadwal</th><th>Masuk</th><th>Keluar</th>
+      <th>Kerja</th><th>Lembur</th><th>Kurang</th><th>Terlambat</th><th>Pulang Cepat</th>
+      <th>Absen</th><th>Lupa in/out</th><th>Ijin</th><th>Alasan Ijin</th>
+    </tr>
+    <tr>
+      <th class="unit">&nbsp;</th><th class="unit">&nbsp;</th><th class="unit">&nbsp;</th><th class="unit">&nbsp;</th><th class="unit">&nbsp;</th>
+      <th class="unit">&nbsp;</th><th class="unit">&nbsp;</th><th class="unit">&nbsp;</th>
+      <th class="unit">Jam</th><th class="unit">Jam</th><th class="unit">Jam</th><th class="unit">Menit</th><th class="unit">Menit</th>
+      <th class="unit">Hari</th><th class="unit">Hari</th><th class="unit">Hari</th><th class="unit">&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- ANDIKA — Week 1 (imported, full data) -->
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">01/04/2026</td><td>Rabu</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">08.06</td><td class="editable">16.41</td><td>7,9</td><td></td><td>0,1</td><td class="late-mild">6</td><td></td><td></td><td></td><td></td><td class="alasan-empty">—</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">02/04/2026</td><td>Kamis</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable"></td><td class="editable"></td><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td><td class="alasan editable">Cuti, Acara keluarga</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">03/04/2026</td><td>Jumat</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">Libur</td><td class="editable"></td><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td><td class="alasan-empty">—</td></tr>
+    <tr class="istirahat"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">04/04/2026</td><td>Sabtu</td><td>Istirahat</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="istirahat"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">05/04/2026</td><td>Minggu</td><td>Istirahat</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">06/04/2026</td><td>Senin</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">08.06</td><td class="editable">18.05</td><td>7,9</td><td>2,1</td><td>0,1</td><td class="late-mild">6</td><td></td><td></td><td></td><td></td><td class="alasan-empty">—</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">07/04/2026</td><td>Selasa</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable"></td><td class="editable">19.00</td><td></td><td>3</td><td></td><td></td><td></td><td></td><td>1</td><td></td><td class="alasan editable">Izin Pagi - urus dokumen anak</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">08/04/2026</td><td>Rabu</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">08.15</td><td class="editable">17.40</td><td>7,8</td><td>1,7</td><td>0,2</td><td class="late-severe">15</td><td></td><td></td><td></td><td></td><td class="alasan-empty">—</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">09/04/2026</td><td>Kamis</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">08.14</td><td class="editable"></td><td></td><td></td><td></td><td class="late-mild">14</td><td></td><td></td><td>1</td><td></td><td class="alasan editable">Lupa absen</td></tr>
+    <tr class="work"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">10/04/2026</td><td>Jumat</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">08.04</td><td class="editable">17.04</td><td>7,9</td><td>1,1</td><td>0,1</td><td>4</td><td></td><td></td><td></td><td></td><td class="alasan-empty">—</td></tr>
+
+    <!-- Week 2 weekend -->
+    <tr class="istirahat"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">11/04/2026</td><td>Sabtu</td><td>Istirahat</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="istirahat"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">12/04/2026</td><td>Minggu</td><td>Istirahat</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+
+    <!-- ANDIKA — Week 3 (NOT YET IMPORTED — skeleton only) -->
+    <tr class="empty"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">13/04/2026</td><td>Senin</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td>not imported</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="empty"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">14/04/2026</td><td>Selasa</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td>not imported</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="empty"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">15/04/2026</td><td>Rabu</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td>not imported</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="empty"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">16/04/2026</td><td>Kamis</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td>not imported</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="empty"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">17/04/2026</td><td>Jumat</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td>not imported</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="istirahat"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">18/04/2026</td><td>Sabtu</td><td>Istirahat</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="istirahat"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">19/04/2026</td><td>Minggu</td><td>Istirahat</td><td>—</td><td>—</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+
+    <!-- (Week 4 + 5 abbreviated for mockup space — would also be skeleton) -->
+    <tr class="empty"><td class="name-cell">ANDIKA</td><td>ARGA DIRGA</td><td class="date-cell">20/04/2026</td><td>Senin</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td>not imported</td><td>—</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+    <tr class="empty"><td colspan="17" style="text-align:center;color:#A78BFA;opacity:0.6;font-size:11px;padding:8px;">— 21/04 - 30/04: not imported (skeleton rows ready) —</td></tr>
+
+    <!-- Total Personal -->
+    <tr class="total">
+      <td>Total Personal:</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+      <td>31,5</td><td>7,9</td><td>16,5</td><td>45</td><td>0</td><td>2</td><td>2</td><td>0</td><td></td>
+    </tr>
+
+    <!-- ESA — fully imported, mostly absent -->
+    <tr class="work"><td class="name-cell">ESA</td><td>ARGA DIRGA</td><td class="date-cell">01/04/2026</td><td>Rabu</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable"></td><td class="editable"></td><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td><td class="alasan editable">Belum daftar fingerprint</td></tr>
+    <tr class="work"><td class="name-cell">ESA</td><td>ARGA DIRGA</td><td class="date-cell">02/04/2026</td><td>Kamis</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable"></td><td class="editable"></td><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td><td class="alasan editable">Belum daftar fingerprint</td></tr>
+    <tr class="work"><td class="name-cell">ESA</td><td>ARGA DIRGA</td><td class="date-cell">03/04/2026</td><td>Jumat</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable"></td><td class="editable"></td><td></td><td></td><td>8</td><td></td><td></td><td>1</td><td></td><td></td><td class="alasan editable">Belum daftar fingerprint</td></tr>
+
+    <!-- TOMBAK example with severe lateness -->
+    <tr class="total"><td>—</td><td colspan="16">…</td></tr>
+    <tr class="work"><td class="name-cell">TOMBAK</td><td>ARGA DIRGA</td><td class="date-cell">01/04/2026</td><td>Rabu</td><td>Hari Kerja</td><td>08.00 - 16.00</td><td class="editable">10.41</td><td class="editable">15.54</td><td>5,2</td><td></td><td>2,8</td><td class="late-severe">161</td><td class="early">6</td><td></td><td></td><td></td><td class="alasan editable">Lapangan ke Klaten</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:#FCD34D;"></span>Late &lt; 15 min</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#F87171;"></span>Late ≥ 15 min</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#C084FC;"></span>Pulang cepat</div>
+  <div class="legend-item"><span class="legend-dot" style="background:#6EE7B7;"></span>Has Alasan Ijin</div>
+  <div class="legend-item"><span class="legend-dot" style="background:rgba(167,139,250,0.4);"></span>Skeleton (not yet imported)</div>
+  <div class="legend-item"><span class="legend-dot" style="background:rgba(167,139,250,0.1);"></span>Istirahat (weekend)</div>
+  <div class="legend-item" style="margin-left:auto;"><span style="opacity:0.6;">💡 Click any cell to edit inline</span></div>
+</div>
+
+</body>
+</html>
