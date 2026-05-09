@@ -110,6 +110,8 @@ class EditRecordsPage:
             self.records_list.update()
             if self.on_data_changed:
                 self.on_data_changed()
+            if self.notify:
+                self.notify("Record diperbarui", rec.get("employee_name", ""))
 
         dialog = ft.AlertDialog(
             modal=True, title=ft.Text(f"Edit · {rec['employee_name']} · {rec['date']}"),
