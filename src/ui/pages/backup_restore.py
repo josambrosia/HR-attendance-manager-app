@@ -1,6 +1,7 @@
 import flet as ft
 from datetime import datetime
 from pathlib import Path
+import threading
 
 from src.core.backup import export_backup, import_backup
 from src.core.constants import COLORS
@@ -96,39 +97,84 @@ class BackupRestorePage:
         )
 
     def _do_export(self):
-        try:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output = str(Path(self.backup_dir) / f"hr_backup_{timestamp}.zip")
-            written = export_backup(self.db_path, self.config_path, self.backup_dir, output)
-            self.status_text.value = f"Export selesai: {written}"
-            self.status_text.color = COLORS["resolved"]
-        except Exception as ex:
-            self.status_text.value = f"Export gagal: {ex}"
-            self.status_text.color = COLORS["late_severe"]
-        self.status_text.update()
+        if self.show_loading:
+            self.show_loading("💾 Creating backup...")
+
+        def work():
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                output = str(Path(self.backup_dir) / f"hr_backup_{timestamp}.zip")
+                written = export_backup(self.db_path, self.config_path,
+                                         self.backup_dir, output)
+
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = f"Export selesai: {written}"
+                self.status_text.color = COLORS["resolved"]
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.notify:
+                    self.notify("Backup tersimpan", Path(written).name)
+            except Exception as ex:
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = f"Export gagal: {ex}"
+                self.status_text.color = COLORS["late_severe"]
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.notify:
+                    self.notify("Backup gagal", str(ex)[:80], kind="error")
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _on_zip_picked(self, e: ft.FilePickerResultEvent):
         if not e.files:
             return
         zip_path = e.files[0].path
-        try:
-            summary = import_backup(
-                zip_path, self.db_path, self.config_path, self.pre_restore_dir,
-            )
-            parts = []
-            if summary["db_restored"]:
-                parts.append("database")
-            if summary["config_restored"]:
-                parts.append("settings")
-            parts.append(f"{summary['snapshots_restored']} snapshots")
-            self.status_text.value = (
-                f"Import selesai ({', '.join(parts)}). "
-                f"Restart aplikasi untuk memuat data baru."
-            )
-            self.status_text.color = COLORS["resolved"]
-            if self.on_data_changed:
-                self.on_data_changed()
-        except Exception as ex:
-            self.status_text.value = f"Import gagal: {ex}"
-            self.status_text.color = COLORS["late_severe"]
-        self.status_text.update()
+        if self.show_loading:
+            self.show_loading("📂 Restoring backup...")
+
+        def work():
+            try:
+                summary = import_backup(
+                    zip_path, self.db_path, self.config_path, self.pre_restore_dir,
+                )
+                parts = []
+                if summary["db_restored"]:
+                    parts.append("database")
+                if summary["config_restored"]:
+                    parts.append("settings")
+                parts.append(f"{summary['snapshots_restored']} snapshots")
+
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = (
+                    f"Import selesai ({', '.join(parts)}). "
+                    f"Restart aplikasi untuk memuat data baru."
+                )
+                self.status_text.color = COLORS["resolved"]
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.on_data_changed:
+                    self.on_data_changed()
+                if self.notify:
+                    self.notify("Restore selesai", "restart aplikasi")
+            except Exception as ex:
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = f"Import gagal: {ex}"
+                self.status_text.color = COLORS["late_severe"]
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.notify:
+                    self.notify("Restore gagal", str(ex)[:80], kind="error")
+
+        threading.Thread(target=work, daemon=True).start()
