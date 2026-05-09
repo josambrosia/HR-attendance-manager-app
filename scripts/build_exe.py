@@ -27,7 +27,7 @@ ENTRY_SCRIPT = PROJECT_ROOT / "main.py"
 ICON = PROJECT_ROOT / "assets" / "icon.ico"
 OUTPUT_NAME = "JosaphatTechHR"
 PRODUCT_NAME = "Josaphat Tech Solution HR Attendance Manager"
-PRODUCT_VERSION = "1.0.2"
+PRODUCT_VERSION = "2.0.0"
 COPYRIGHT = "Josaphat Tech Solution"
 
 
