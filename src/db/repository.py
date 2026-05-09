@@ -215,6 +215,26 @@ class Repository:
         )
         return [dict(row) for row in cursor.fetchall()]
 
+    def list_issues_with_resolutions(self, start_date: str, end_date: str) -> list[dict]:
+        """Return all issues (case A/B/C/F) in date range, with resolution info if any.
+
+        Ordered: pending first (resolution NULL), then resolved; within each group
+        by date asc, then employee name asc. Used by the Issues page to render
+        the Pending and Resolved sections.
+        """
+        cursor = self.conn.execute(
+            """SELECT ar.*, e.name AS employee_name, e.staff_no,
+                      r.reason_code, r.location, r.reason_detail, r.resolved_at
+               FROM attendance_records ar
+               JOIN employees e ON ar.employee_id = e.id
+               LEFT JOIN resolutions r ON r.record_id = ar.id
+               WHERE ar.date >= ? AND ar.date <= ?
+                 AND ar.issue_case IN ('A','B','C','F')
+               ORDER BY (r.id IS NULL) DESC, ar.date, e.name""",
+            (start_date, end_date),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
     def list_history_for_record(self, record_id: int) -> list[dict]:
         cursor = self.conn.execute(
             """SELECT * FROM record_history

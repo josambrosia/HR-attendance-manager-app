@@ -147,3 +147,53 @@ def test_list_monthly_grid_filter_by_employee(tmp_path):
     assert len(all_rows) == 60   # 2 employees × 30 days
     assert len(only_esa) == 30
     assert all(r["staff_no"] == "1004" for r in only_esa)
+
+
+def test_list_issues_with_resolutions_pending_first(tmp_path):
+    repo = Repository(str(tmp_path / "test.db"))
+    repo.init_schema()
+    emp = repo.upsert_employee(staff_no="1001", name="ALICE")
+    # Two attendance records on different dates, both case A (tidak hadir)
+    rec_a = repo.insert_attendance({
+        "employee_id": emp, "date": "2026-04-01", "day_name": "Rabu",
+        "day_type": "Hari Kerja", "issue_case": "A",
+    })
+    rec_b = repo.insert_attendance({
+        "employee_id": emp, "date": "2026-04-02", "day_name": "Kamis",
+        "day_type": "Hari Kerja", "issue_case": "A",
+    })
+    # Resolve only rec_a
+    repo.upsert_resolution(rec_a, reason_code="cuti")
+
+    rows = repo.list_issues_with_resolutions("2026-04-01", "2026-04-07")
+    assert len(rows) == 2
+    # Pending (no reason_code) must come first
+    assert rows[0]["reason_code"] is None
+    assert rows[0]["id"] == rec_b
+    assert rows[1]["reason_code"] == "cuti"
+    assert rows[1]["id"] == rec_a
+
+
+def test_list_issues_with_resolutions_excludes_non_issue_cases(tmp_path):
+    repo = Repository(str(tmp_path / "test.db"))
+    repo.init_schema()
+    emp = repo.upsert_employee(staff_no="1001", name="ALICE")
+    # Case D (mild late) is NOT in the issue set (A/B/C/F) — should be excluded
+    repo.insert_attendance({
+        "employee_id": emp, "date": "2026-04-01", "day_name": "Rabu",
+        "day_type": "Hari Kerja", "issue_case": "D",
+    })
+    # Case G (Istirahat / weekend) is also out
+    repo.insert_attendance({
+        "employee_id": emp, "date": "2026-04-04", "day_name": "Sabtu",
+        "day_type": "Istirahat", "issue_case": "G",
+    })
+    # Case A is in
+    repo.insert_attendance({
+        "employee_id": emp, "date": "2026-04-02", "day_name": "Kamis",
+        "day_type": "Hari Kerja", "issue_case": "A",
+    })
+
+    rows = repo.list_issues_with_resolutions("2026-04-01", "2026-04-07")
+    assert len(rows) == 1
+    assert rows[0]["issue_case"] == "A"
