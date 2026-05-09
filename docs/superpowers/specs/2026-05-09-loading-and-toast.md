@@ -30,7 +30,7 @@ Add two pieces of visual feedback to the HR Attendance Manager so the user alway
 | Element | Variant | Behavior |
 |---------|---------|----------|
 | **Loading** | **L2 — Top Progress Strip** | Indeterminate `ProgressBar` + label at the top of the content area, light dim layer underneath blocking clicks. Disappears when op finishes. |
-| **Toast** | **T2 — Translucent Solid** | Top-right corner card. Semi-transparent dark fill (~82% opacity) with a left border (3px) — green for success, red for error. Auto-dismiss after 1500ms. Stacks vertically when multiple are queued. |
+| **Toast** | **T2 — Translucent Solid** | Top-right corner card. Semi-transparent dark fill (~82% opacity) with a left border (3px) — green for success, red for error. Auto-dismiss: **success 1500ms, error 3000ms** (errors need more reading time). Stacks vertically when multiple are queued. |
 
 User-stated constraints:
 - Loading: blocks clicks (modal feel)
@@ -146,7 +146,7 @@ ft.Container
   ])
 ```
 
-**Auto-dismiss:** each toast spawns a `threading.Timer(1.5, dismiss)` on append. `dismiss` removes the toast from the stack and calls `update()`. Wrapped in try/except to handle race with manual unmount.
+**Auto-dismiss:** each toast spawns a `threading.Timer(duration, dismiss)` on append. Duration depends on kind: `1.5s` for success, `3.0s` for error (errors need more reading time per user request). `dismiss` removes the toast from the stack and calls `update()`. Wrapped in try/except to handle race with manual unmount.
 
 **Stacking:** `success`/`error` append to the stack column. Stack max-3 — if already 3 visible, the oldest is removed before appending.
 
@@ -279,7 +279,8 @@ Match existing Sunset Coral palette (`src/core/constants.py:COLORS`).
 | Title text | size, weight | 13px, W_700 |
 | Desc text | size, opacity | 11px, 80% |
 | Stack gap | | 8px |
-| Auto-dismiss | | 1500ms |
+| Auto-dismiss (success) | | 1500ms |
+| Auto-dismiss (error) | | 3000ms |
 | Max stack size | | 3 (oldest evicted on overflow) |
 
 ---
@@ -344,7 +345,6 @@ Tests pass: 91 → ~100 expected (depending on exact count of new tests added).
 
 - **Per-operation icons:** spec uses emoji prefixes in labels (`📥`, `📄`, `📊`, `💾`, `📂`). If the user prefers icon widgets (`ft.Icon`) instead of emoji, this is a small follow-up.
 - **Toast click-to-dismiss:** currently auto-dismiss only. Adding click-to-dismiss is trivial but out of scope.
-- **Error toast duration:** errors might warrant longer duration (e.g., 3000ms) so the user can read them. Spec uses 1500ms uniformly to match user's "1-2 detik" — revisit after testing if errors get missed.
 - **Toast for fast-op errors:** out of scope. Existing inline `status_text` for fast-op errors is preserved.
 
 ---
