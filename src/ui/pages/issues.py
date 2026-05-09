@@ -31,6 +31,7 @@ class IssuesPage:
         self.start = today - timedelta(days=today.weekday())
         self.end = self.start + timedelta(days=6)
         self.selected_record_id = None
+        self.selected_employee_name = ""
         self.selected_reason = None
         self._refresh_timer = None
 
@@ -170,6 +171,7 @@ class IssuesPage:
 
     def _select_issue(self, record_id: int, issue: dict):
         self.selected_record_id = record_id
+        self.selected_employee_name = issue.get("employee_name", "")
         self.selected_reason = None
         self.resolve_panel.visible = True
         self.resolve_panel.content = self._build_resolve_panel(issue)
@@ -287,11 +289,14 @@ class IssuesPage:
             kwargs["reason_detail"] = self.extra_input_field.value
         kwargs["penalty_minutes"] = self.settings.get("lupa_absen_penalty_minutes")
         apply_resolution(self.repo, self.selected_record_id, self.selected_reason, **kwargs)
+        emp_name = self.selected_employee_name
         self._close_panel()
         self._refresh_list()
         self.list_view.update()
         if self.on_data_changed:
             self.on_data_changed()
+        if self.notify:
+            self.notify("Issue resolved", emp_name)
 
     def _close_panel(self):
         self.resolve_panel.visible = False
