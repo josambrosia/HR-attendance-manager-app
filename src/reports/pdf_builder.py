@@ -82,5 +82,5 @@ class PdfReportBuilder:
                      "Powered by Josaphat Tech Solution")
         c.setFont("Helvetica", 7)
         c.drawString(page_w / 2 - 23 * mm, footer_y - 1.8 * mm,
-                     f"HR Attendance Manager - v{self.version} - "
+                     f"HR Attendance Manager · v{self.version} · "
                      f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}")
