@@ -361,16 +361,154 @@ class IssuesPage:
 
 
 class ResolveModal:
-    """Stub — fully built in Tasks 5-8. Just lets IssuesPage construct."""
-    def __init__(self, page, repo, settings, on_resolved=None, on_deleted=None):
+    """Centered 720px dialog for resolving / editing an Issue.
+
+    Constructed once per IssuesPage; mounts itself onto page.overlay; toggles
+    visibility via open_for() / close(). Keeps its widget tree alive across
+    open/close cycles to avoid Flet's "control already added" issues.
+    """
+
+    def __init__(self, page: ft.Page, repo: Repository, settings: SettingsStore,
+                 on_resolved=None, on_deleted=None):
         self.page = page
         self.repo = repo
         self.settings = settings
         self.on_resolved = on_resolved
         self.on_deleted = on_deleted
 
+        # Per-open state
+        self._issue: dict | None = None
+        self._edit_mode = False
+        self._selected_reason: str | None = None
+
+        # Build widgets that we'll mutate later
+        self._header_title = ft.Text("Resolve Issue", size=20,
+                                      weight=ft.FontWeight.W_800)
+        self._header_meta = ft.Text("", size=13, color=COLORS["accent"])
+        self._summary_text = ft.Text("", size=14,
+                                      font_family="Courier New")
+        self._cancel_btn = ft.TextButton(
+            "Cancel", on_click=lambda e: self.close(),
+        )
+        self._save_btn = ft.ElevatedButton(
+            "Save Resolution", on_click=lambda e: self._save(),
+            bgcolor=COLORS["resolved"], color="white", disabled=True,
+        )
+        self._delete_btn = ft.TextButton(
+            "🗑 Delete Resolution",
+            on_click=lambda e: self._confirm_delete(),
+            visible=False,
+            style=ft.ButtonStyle(color=COLORS["late_severe"]),
+        )
+
+        # Body placeholder (Tasks 6-7 will fill this)
+        self._body_placeholder = ft.Column(spacing=12, controls=[])
+
+        self._dialog = ft.Container(
+            top=0, left=0, right=0, bottom=0,
+            bgcolor=f"{COLORS['bg_dark']}C7",  # ~78% alpha dim
+            visible=False,
+            on_click=lambda e: None,  # absorb clicks on dim layer
+            content=ft.Row(
+                alignment=ft.MainAxisAlignment.CENTER,
+                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                controls=[
+                    ft.Container(
+                        width=720,
+                        padding=0,
+                        border_radius=16,
+                        bgcolor=COLORS["surface_dark"],
+                        border=ft.border.all(2, COLORS["primary"]),
+                        content=ft.Column(spacing=0, controls=[
+                            # Header
+                            ft.Container(
+                                padding=ft.padding.symmetric(horizontal=24,
+                                                              vertical=18),
+                                border=ft.border.only(bottom=ft.BorderSide(
+                                    1, f"{COLORS['accent']}33")),
+                                content=ft.Row(controls=[
+                                    ft.Column(spacing=2, controls=[
+                                        self._header_title,
+                                        self._header_meta,
+                                    ]),
+                                    ft.Container(expand=True),
+                                    ft.IconButton(
+                                        ft.Icons.CLOSE,
+                                        on_click=lambda e: self.close(),
+                                    ),
+                                ]),
+                            ),
+                            # Issue summary strip
+                            ft.Container(
+                                padding=ft.padding.symmetric(horizontal=24,
+                                                              vertical=14),
+                                bgcolor=f"{COLORS['late_severe']}14",
+                                border=ft.border.only(bottom=ft.BorderSide(
+                                    1, f"{COLORS['late_severe']}40")),
+                                content=self._summary_text,
+                            ),
+                            # Body (reason cards, extra input, preview — Tasks 6-7)
+                            ft.Container(
+                                padding=ft.padding.symmetric(horizontal=24,
+                                                              vertical=16),
+                                content=self._body_placeholder,
+                            ),
+                            # Footer
+                            ft.Container(
+                                padding=ft.padding.symmetric(horizontal=24,
+                                                              vertical=14),
+                                border=ft.border.only(top=ft.BorderSide(
+                                    1, f"{COLORS['accent']}33")),
+                                content=ft.Row(controls=[
+                                    self._delete_btn,
+                                    ft.Container(expand=True),
+                                    self._cancel_btn,
+                                    self._save_btn,
+                                ]),
+                            ),
+                        ]),
+                    ),
+                ],
+            ),
+        )
+        page.overlay.append(self._dialog)
+
     def open_for(self, issue: dict, edit_mode: bool = False) -> None:
-        pass
+        self._issue = issue
+        self._edit_mode = edit_mode
+        self._selected_reason = issue.get("reason_code") if edit_mode else None
+
+        case_label = CASE_LABELS.get(issue["issue_case"],
+                                      (issue["issue_case"], "#999"))[0]
+        self._header_meta.value = (
+            f"{issue['employee_name']} · {issue['date']} "
+            f"({issue.get('day_name','')}) · {case_label}"
+        )
+        in_val = issue.get("actual_in") or "kosong"
+        out_val = issue.get("actual_out") or "kosong"
+        self._summary_text.value = f"In: {in_val}     Out: {out_val}"
+
+        self._delete_btn.visible = edit_mode
+        self._save_btn.text = "Update Resolution" if edit_mode else "Save Resolution"
+        self._save_btn.disabled = not edit_mode  # Tasks 7+ refine this
+
+        self._dialog.visible = True
+        try:
+            self.page.update()
+        except (AssertionError, AttributeError):
+            pass
 
     def close(self) -> None:
+        self._dialog.visible = False
+        try:
+            self.page.update()
+        except (AssertionError, AttributeError):
+            pass
+
+    def _save(self) -> None:
+        # Stub — Task 8 implements
+        pass
+
+    def _confirm_delete(self) -> None:
+        # Stub — Task 8 implements
         pass

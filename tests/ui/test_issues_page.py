@@ -129,3 +129,33 @@ def test_subtitle_shows_breakdown(page_with_data):
     assert "3 total" in p.subtitle_text.value
     assert "2 pending" in p.subtitle_text.value
     assert "1 resolved" in p.subtitle_text.value
+
+
+def test_modal_starts_hidden(page_with_data):
+    p, _ = page_with_data
+    assert p._modal is not None
+    assert p._modal._dialog.visible is False
+
+
+def test_modal_open_for_pending_issue_sets_state(page_with_data):
+    p, _ = page_with_data
+    issue = {
+        "id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+        "day_name": "Rabu", "issue_case": "A", "actual_in": None, "actual_out": None,
+        "reason_code": None,
+    }
+    p._modal.open_for(issue, edit_mode=False)
+    assert p._modal._issue == issue
+    assert p._modal._edit_mode is False
+    assert p._modal._dialog.visible is True
+    assert "ALICE" in p._modal._header_meta.value
+
+
+def test_modal_close_hides_dialog(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "X", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue)
+    p._modal.close()
+    assert p._modal._dialog.visible is False
