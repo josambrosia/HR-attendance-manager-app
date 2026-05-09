@@ -1,4 +1,5 @@
 import flet as ft
+import threading
 from datetime import date, timedelta
 from pathlib import Path
 from src.core.constants import COLORS
@@ -46,40 +47,66 @@ class WeeklyReportPage:
         show_checklist_modal(page, "Export Weekly Report", self._generate)
 
     def _generate(self, selected: dict, fmt: str):
-        # Lazy imports keep page-load cheap and avoid eager pulls of reportlab/openpyxl
-        from src.core.metrics import (
-            weekly_summary, hall_of_late, coaching_candidates, repeat_offenders,
-            distribusi_alasan, hari_paling_telat, best_performer, late_trend,
-        )
+        loading_label = "📄 Generating PDF..." if fmt == "pdf" else "📊 Generating Excel..."
+        toast_title = "PDF tersimpan" if fmt == "pdf" else "Excel tersimpan"
+        if self.show_loading:
+            self.show_loading(loading_label)
 
-        coaching_thr = self.settings.get("coaching_threshold_minutes", 75)
-        repeat_weeks = self.settings.get("repeat_offender_weeks", 3)
-
-        s = weekly_summary(self.repo, self.start.isoformat(), self.end.isoformat())
-        coaching = coaching_candidates(self.repo, self.start.isoformat(), self.end.isoformat(),
-                                       coaching_thr)
-        repeat = repeat_offenders(self.repo, self.end.isoformat(), repeat_weeks)
-        repeat_set = {r["staff_no"] for r in repeat}
-        ranking_full = hall_of_late(self.repo, self.start.isoformat(), self.end.isoformat())
-        top_n = selected.get("hall_top_n", "5")
-        ranking = ranking_full if top_n == "All" else ranking_full[:int(top_n)]
-        trend = late_trend(self.repo, self.start.isoformat(), self.end.isoformat())
-
-        try:
-            if fmt == "pdf":
-                output = self.exports_dir / f"weekly-report_{self.start}_{self.end}.pdf"
-                self._build_pdf(
-                    str(output), selected, s, coaching, repeat_set, ranking, trend,
-                    coaching_thr, len(repeat),
-                    distribusi_alasan, hari_paling_telat, best_performer,
+        def work():
+            try:
+                # Lazy imports keep page-load cheap and avoid eager pulls of reportlab/openpyxl
+                from src.core.metrics import (
+                    weekly_summary, hall_of_late, coaching_candidates, repeat_offenders,
+                    distribusi_alasan, hari_paling_telat, best_performer, late_trend,
                 )
-            else:
-                output = self.exports_dir / f"weekly-report_{self.start}_{self.end}.xlsx"
-                self._build_excel(str(output), selected, s, ranking, coaching)
-            self.status_text.value = f"Generated: {output}"
-        except Exception as exc:  # noqa: BLE001
-            self.status_text.value = f"Failed to generate report: {exc}"
-        self.status_text.update()
+
+                coaching_thr = self.settings.get("coaching_threshold_minutes", 75)
+                repeat_weeks = self.settings.get("repeat_offender_weeks", 3)
+
+                s = weekly_summary(self.repo, self.start.isoformat(), self.end.isoformat())
+                coaching = coaching_candidates(self.repo, self.start.isoformat(),
+                                                self.end.isoformat(), coaching_thr)
+                repeat = repeat_offenders(self.repo, self.end.isoformat(), repeat_weeks)
+                repeat_set = {r["staff_no"] for r in repeat}
+                ranking_full = hall_of_late(self.repo, self.start.isoformat(),
+                                             self.end.isoformat())
+                top_n = selected.get("hall_top_n", "5")
+                ranking = ranking_full if top_n == "All" else ranking_full[:int(top_n)]
+                trend = late_trend(self.repo, self.start.isoformat(), self.end.isoformat())
+
+                if fmt == "pdf":
+                    output = self.exports_dir / f"weekly-report_{self.start}_{self.end}.pdf"
+                    self._build_pdf(
+                        str(output), selected, s, coaching, repeat_set, ranking, trend,
+                        coaching_thr, len(repeat),
+                        distribusi_alasan, hari_paling_telat, best_performer,
+                    )
+                else:
+                    output = self.exports_dir / f"weekly-report_{self.start}_{self.end}.xlsx"
+                    self._build_excel(str(output), selected, s, ranking, coaching)
+
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = f"Generated: {output.name}"
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.notify:
+                    self.notify(toast_title, output.name)
+            except Exception as exc:  # noqa: BLE001
+                if self.hide_loading:
+                    self.hide_loading()
+                self.status_text.value = f"Failed to generate report: {exc}"
+                try:
+                    self.status_text.update()
+                except (AssertionError, AttributeError):
+                    pass
+                if self.notify:
+                    error_title = "Export PDF gagal" if fmt == "pdf" else "Export Excel gagal"
+                    self.notify(error_title, str(exc)[:80], kind="error")
+
+        threading.Thread(target=work, daemon=True).start()
 
     def _build_pdf(self, output, selected, summary, coaching, repeat_set, ranking, trend,
                    coaching_thr, repeat_count,
