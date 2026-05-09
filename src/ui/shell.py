@@ -49,6 +49,8 @@ class Shell:
                     builders[route] = self._build_issues_page
                 elif route == "edit_records":
                     builders[route] = self._build_edit_records_page
+                elif route == "dashboard":
+                    builders[route] = self._build_dashboard_page
                 else:
                     # Capture per-iteration via default args
                     builders[route] = (lambda r=route, t=label: _placeholder.build(t, self.mode))
@@ -67,6 +69,11 @@ class Shell:
     def _build_edit_records_page(self) -> ft.Control:
         from src.ui.pages.edit_records import EditRecordsPage
         page_obj = EditRecordsPage(self.repo, self.settings, self.mode)
+        return page_obj.build()
+
+    def _build_dashboard_page(self) -> ft.Control:
+        from src.ui.pages.dashboard import DashboardPage
+        page_obj = DashboardPage(self.repo, self.settings, self.mode)
         return page_obj.build()
 
     def build(self) -> ft.Control:
