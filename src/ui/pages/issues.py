@@ -454,6 +454,51 @@ class ResolveModal:
         self._body_placeholder = ft.Column(spacing=12, controls=[])
         self._build_reason_cards_into_body()
 
+        # Extra-input area (hidden by default; shown when reason needs input)
+        self._extra_input_label = ft.Text("", size=11,
+                                           weight=ft.FontWeight.W_800,
+                                           color=COLORS["accent"])
+        self._extra_input_field = ft.TextField(
+            label="", hint_text="", expand=True,
+            on_change=lambda e: self._on_extra_input_change(),
+        )
+        self._extra_input_hint = ft.Text(
+            "Field wajib diisi sebelum Save.",
+            size=10, color=COLORS["accent"], opacity=0.7,
+        )
+        self._extra_input_area = ft.Container(
+            padding=ft.padding.symmetric(horizontal=14, vertical=12),
+            border_radius=10,
+            bgcolor=f"{COLORS['accent']}14",
+            border=ft.border.all(1, f"{COLORS['accent']}55"),
+            visible=False,
+            content=ft.Column(spacing=6, controls=[
+                self._extra_input_label,
+                self._extra_input_field,
+                self._extra_input_hint,
+            ]),
+        )
+
+        # Live preview strip
+        self._live_preview_text = ft.Text("", size=12, italic=True,
+                                           color=COLORS["resolved"])
+        self._live_preview_area = ft.Container(
+            padding=ft.padding.symmetric(horizontal=12, vertical=9),
+            border_radius=6,
+            bgcolor=f"{COLORS['resolved']}14",
+            border=ft.border.only(left=ft.BorderSide(3, COLORS["resolved"])),
+            visible=False,
+            content=ft.Row(spacing=6, controls=[
+                ft.Text("Preview di Main DB:", size=11, weight=ft.FontWeight.W_700,
+                        color=COLORS["resolved"], opacity=0.85),
+                self._live_preview_text,
+            ]),
+        )
+
+        # Append to body placeholder so they appear below reason categories
+        self._body_placeholder.controls.append(self._extra_input_area)
+        self._body_placeholder.controls.append(self._live_preview_area)
+
         self._dialog = ft.Container(
             top=0, left=0, right=0, bottom=0,
             bgcolor=f"{COLORS['bg_dark']}C7",  # ~78% alpha dim
@@ -616,11 +661,61 @@ class ResolveModal:
                 card.bgcolor = f"{COLORS['primary']}1A"
                 card.border = ft.border.only(
                     left=ft.BorderSide(2, f"{COLORS['primary']}55"))
-        # Tasks 7+: trigger extra-input visibility + save state + preview
+
+        # Extra-input area visibility + label
+        extra_kind = _REASON_NEEDS_INPUT.get(code)
+        if extra_kind == "location":
+            self._extra_input_area.visible = True
+            self._extra_input_label.value = "📍 LOKASI *"
+            self._extra_input_field.label = "Lokasi"
+            self._extra_input_field.hint_text = "Misal: Kantor Klien Surabaya, Site PT XYZ"
+        elif extra_kind == "reason_detail":
+            self._extra_input_area.visible = True
+            self._extra_input_label.value = "✏️ ALASAN DETAIL *"
+            self._extra_input_field.label = "Alasan detail"
+            self._extra_input_field.hint_text = "Singkat alasan kenapa terjadi"
+        else:
+            self._extra_input_area.visible = False
+            self._extra_input_field.value = ""
+
+        # Live preview area visible whenever a reason is picked
+        self._live_preview_area.visible = True
+        self._update_live_preview()
+        self._update_save_btn_state()
         try:
             self._dialog.update()
         except (AssertionError, AttributeError):
             pass
+
+    def _on_extra_input_change(self) -> None:
+        self._update_live_preview()
+        self._update_save_btn_state()
+        try:
+            self._dialog.update()
+        except (AssertionError, AttributeError):
+            pass
+
+    def _update_live_preview(self) -> None:
+        from src.core.alasan_format import format_alasan
+        if self._selected_reason is None:
+            self._live_preview_text.value = ""
+            return
+        extra = _REASON_NEEDS_INPUT.get(self._selected_reason)
+        location = self._extra_input_field.value if extra == "location" else None
+        reason_detail = self._extra_input_field.value if extra == "reason_detail" else None
+        self._live_preview_text.value = format_alasan(
+            self._selected_reason, location, reason_detail,
+        )
+
+    def _update_save_btn_state(self) -> None:
+        if self._selected_reason is None:
+            self._save_btn.disabled = True
+            return
+        extra = _REASON_NEEDS_INPUT.get(self._selected_reason)
+        if extra and not (self._extra_input_field.value or "").strip():
+            self._save_btn.disabled = True
+        else:
+            self._save_btn.disabled = False
 
     def open_for(self, issue: dict, edit_mode: bool = False) -> None:
         self._issue = issue

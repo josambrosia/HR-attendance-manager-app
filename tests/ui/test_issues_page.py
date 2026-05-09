@@ -188,3 +188,59 @@ def test_select_reason_marks_card_selected(page_with_data):
     p._modal._select_reason("cuti")
     assert p._modal._selected_reason == "cuti"
     assert p._modal._reason_cards["cuti"].border.left.color == COLORS["accent"]
+
+
+def test_select_reason_with_location_shows_extra_input(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue)
+    p._modal._select_reason("tugas_lapangan")
+    assert p._modal._extra_input_area.visible is True
+    assert "LOKASI" in p._modal._extra_input_label.value
+
+
+def test_select_reason_without_input_hides_extra_input(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue)
+    p._modal._select_reason("cuti")
+    assert p._modal._extra_input_area.visible is False
+
+
+def test_save_button_disabled_until_input_filled(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue)
+    p._modal._select_reason("tugas_lapangan")
+    assert p._modal._save_btn.disabled is True
+    p._modal._extra_input_field.value = "Surabaya"
+    p._modal._update_save_btn_state()
+    assert p._modal._save_btn.disabled is False
+
+
+def test_save_button_enabled_for_no_input_reason(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue)
+    p._modal._select_reason("cuti")
+    assert p._modal._save_btn.disabled is False
+
+
+def test_live_preview_updates_on_extra_input(page_with_data):
+    p, _ = page_with_data
+    issue = {"id": 1, "employee_name": "ALICE", "date": "2026-04-01",
+             "day_name": "Rabu", "issue_case": "A",
+             "actual_in": None, "actual_out": None, "reason_code": None}
+    p._modal.open_for(issue)
+    p._modal._select_reason("tugas_lapangan")
+    p._modal._extra_input_field.value = "Surabaya"
+    p._modal._update_live_preview()
+    assert "Lapangan ke Surabaya" in p._modal._live_preview_text.value
