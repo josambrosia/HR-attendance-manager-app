@@ -21,9 +21,63 @@ class DashboardPage:
         self.settings = settings
         self.mode = mode
         self.nav_callback = nav_callback
-        today = date.today()
-        self.start = today - timedelta(days=today.weekday())
-        self.end = self.start + timedelta(days=6)
+        self.range_mode = "weekly"
+        self.start, self.end = self._resolve_default_period()
+
+    def _resolve_default_period(self) -> tuple[date, date]:
+        """Find the latest week with any 'Hari Kerja' data.
+        Falls back to current calendar week if DB is empty."""
+        cursor = self.repo.conn.execute(
+            "SELECT MAX(date) FROM attendance_records WHERE day_type='Hari Kerja'"
+        )
+        row = cursor.fetchone()
+        latest_date_str = row[0] if row else None
+        if latest_date_str:
+            from datetime import datetime as _dt
+            latest = _dt.fromisoformat(latest_date_str).date()
+            start = latest - timedelta(days=latest.weekday())
+        else:
+            today = date.today()
+            start = today - timedelta(days=today.weekday())
+        return (start, start + timedelta(days=6))
+
+    def _switch_range_mode(self, mode: str):
+        """Toggle between 'weekly' (7 days) and 'monthly' (full month containing self.start)."""
+        if mode == self.range_mode:
+            return
+        self.range_mode = mode
+        if mode == "monthly":
+            from calendar import monthrange
+            anchor = self.start
+            self.start = anchor.replace(day=1)
+            last_day = monthrange(anchor.year, anchor.month)[1]
+            self.end = anchor.replace(day=last_day)
+        else:
+            # snap back to ISO week containing current self.start
+            self.start = self.start - timedelta(days=self.start.weekday())
+            self.end = self.start + timedelta(days=6)
+        self._rebuild()
+
+    def _period_step(self, direction: int):
+        """Step ±1 unit (week or month) based on current range_mode."""
+        if self.range_mode == "monthly":
+            from calendar import monthrange
+            if direction > 0:
+                anchor = self.end + timedelta(days=1)
+            else:
+                anchor = self.start - timedelta(days=1)
+            self.start = anchor.replace(day=1)
+            last_day = monthrange(anchor.year, anchor.month)[1]
+            self.end = anchor.replace(day=last_day)
+        else:
+            self.start += timedelta(weeks=direction)
+            self.end += timedelta(weeks=direction)
+        self._rebuild()
+
+    def _rebuild(self):
+        """Re-trigger dashboard rebuild via the Shell's nav callback."""
+        if hasattr(self, "nav_callback") and self.nav_callback is not None:
+            self.nav_callback("dashboard")
 
     def _show_snack(self, page, msg):
         page.snack_bar = ft.SnackBar(ft.Text(msg), open=True)
@@ -83,21 +137,38 @@ class DashboardPage:
         return ft.Container(
             padding=ft.padding.only(bottom=16),
             border=ft.border.only(bottom=ft.BorderSide(1, f"{COLORS['primary']}33")),
-            content=ft.Row(controls=[
-                ft.Column(spacing=4, controls=[
-                    ft.Text("Weekly Dashboard", size=28, weight=ft.FontWeight.W_800),
-                    ft.Text(f"Periode: {self.start} → {self.end} · {summary['total_records']} records",
-                            size=13, opacity=0.7),
+            content=ft.Column(spacing=10, controls=[
+                ft.Row(controls=[
+                    ft.Column(spacing=4, controls=[
+                        ft.Text("Weekly Dashboard", size=28, weight=ft.FontWeight.W_800),
+                        ft.Text(f"{self.range_mode.title()} · {self.start} → {self.end} · {summary['total_records']} records",
+                                size=13, opacity=0.7),
+                    ]),
+                    ft.Container(expand=True),
+                    ft.SegmentedButton(
+                        selected={self.range_mode},
+                        segments=[
+                            ft.Segment(value="weekly", label=ft.Text("Weekly")),
+                            ft.Segment(value="monthly", label=ft.Text("Monthly")),
+                        ],
+                        on_change=lambda e: self._switch_range_mode(next(iter(e.control.selected))),
+                    ),
+                    ft.Container(width=8),
+                    ft.IconButton(ft.Icons.CHEVRON_LEFT,
+                                  on_click=lambda e: self._period_step(-1)),
+                    ft.Text(f"{self.start} → {self.end}", size=12, opacity=0.8),
+                    ft.IconButton(ft.Icons.CHEVRON_RIGHT,
+                                  on_click=lambda e: self._period_step(1)),
+                    ft.Container(width=8),
+                    ft.ElevatedButton(
+                        "📤 Export Weekly",
+                        on_click=lambda e: self.nav_callback("weekly_report") if self.nav_callback else None,
+                        bgcolor=COLORS["primary"], color="white"),
+                    ft.ElevatedButton(
+                        "📆 Export Monthly",
+                        on_click=lambda e: self.nav_callback("monthly_report") if self.nav_callback else None,
+                        bgcolor=COLORS["accent"], color="white"),
                 ]),
-                ft.Container(expand=True),
-                ft.ElevatedButton(
-                    "📤 Export Weekly",
-                    on_click=lambda e: self.nav_callback("weekly_report") if self.nav_callback else None,
-                    bgcolor=COLORS["primary"], color="white"),
-                ft.ElevatedButton(
-                    "📆 Export Monthly",
-                    on_click=lambda e: self.nav_callback("monthly_report") if self.nav_callback else None,
-                    bgcolor=COLORS["accent"], color="white"),
             ]),
         )
 
