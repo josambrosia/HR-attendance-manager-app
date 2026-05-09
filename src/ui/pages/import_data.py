@@ -126,8 +126,14 @@ class ImportDataPage:
             snapshot_dir=self.snapshot_dir, policy=policy,
             settings=self.settings.load(),
         )
-        msg = (f"✅ Import selesai · {summary['inserted']} baru · "
-               f"{summary['kept']} kept · {summary['overwritten']} overwritten")
+        parts = [
+            f"{summary['inserted']} new",
+            f"{summary['kept']} kept",
+            f"{summary['overwritten']} overwritten",
+        ]
+        if summary.get("preserved_resolved", 0) > 0:
+            parts.append(f"{summary['preserved_resolved']} preserved (resolved)")
+        msg = "✅ Import done · " + " · ".join(parts)
         self.status_text.value = msg
         self.status_text.update()
         self._reset_after_success()
