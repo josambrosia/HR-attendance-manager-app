@@ -23,6 +23,7 @@ REASON_CODES = {
     "telat_personal": {"label": "Terlambat", "extra": None},
     "lupa_absen": {"label": "Lupa Absen (terhitung telat 16 menit)", "extra": None},
     "belum_kabar": {"label": "Belum Ada Kabar", "extra": None},
+    "tidak_hadir": {"label": "Tidak Hadir", "extra": None},
 }
 
 # Sunset Coral palette
